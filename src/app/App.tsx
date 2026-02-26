@@ -11,6 +11,40 @@ export default function App() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [step, setStep] = useState<AppStep>("intro");
 
+  // Set document title and meta tags
+  useEffect(() => {
+    // Set title
+    document.title = "NELSurveys - Dial Test Survey";
+
+    // Helper function to set or update meta tags
+    const setMetaTag = (name: string, content: string, property?: boolean) => {
+      const attribute = property ? "property" : "name";
+      let tag = document.querySelector(`meta[${attribute}="${name}"]`);
+      
+      if (!tag) {
+        tag = document.createElement("meta");
+        tag.setAttribute(attribute, name);
+        document.head.appendChild(tag);
+      }
+      
+      tag.setAttribute("content", content);
+    };
+
+    // Set meta description
+    setMetaTag("description", "NELSurveys dial test application for measuring emotional responses to video content.");
+
+    // Set Open Graph tags
+    setMetaTag("og:title", "NELSurveys - Dial Test Survey", true);
+    setMetaTag("og:description", "Measure emotional responses to video content with our dial test survey.", true);
+    setMetaTag("og:site_name", "NELSurveys", true);
+    setMetaTag("og:type", "website", true);
+
+    // Set Twitter Card tags
+    setMetaTag("twitter:card", "summary_large_image");
+    setMetaTag("twitter:title", "NELSurveys - Dial Test Survey");
+    setMetaTag("twitter:description", "Measure emotional responses to video content with our dial test survey.");
+  }, []);
+
   // Create session on mount
   useEffect(() => {
     const initSession = async () => {
