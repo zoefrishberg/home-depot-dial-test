@@ -1,0 +1,71 @@
+import { projectId, publicAnonKey } from '/utils/supabase/info';
+
+const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-640b0dec`;
+
+export async function apiCall(endpoint: string, options: RequestInit = {}) {
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${publicAnonKey}`,
+      ...options.headers,
+    },
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error(`API call failed: ${endpoint}`, errorData);
+    throw new Error(errorData.error || `API request failed: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+// Session management
+export async function createSession() {
+  return apiCall('/session/create', {
+    method: 'POST',
+  });
+}
+
+export async function recordPageCompletion(sessionId: string, pageName: string) {
+  return apiCall(`/session/${sessionId}/page`, {
+    method: 'POST',
+    body: JSON.stringify({ pageName }),
+  });
+}
+
+export async function saveDialData(
+  sessionId: string,
+  pageType: 'tutorial' | 'actual',
+  dataPoints: Array<{ timestamp: number; button: string | null; intensity: number }>
+) {
+  return apiCall(`/session/${sessionId}/dialdata`, {
+    method: 'POST',
+    body: JSON.stringify({ pageType, dataPoints }),
+  });
+}
+
+export async function getSessionData(sessionId: string) {
+  return apiCall(`/session/${sessionId}`, {
+    method: 'GET',
+  });
+}
+
+export async function saveFeedback(
+  sessionId: string,
+  feedback: {
+    easeOfUse: string;
+    attentionDifficulty: string;
+    expressiveness: string;
+    improvements: string;
+    repeatIntent: string;
+  }
+) {
+  return apiCall(`/session/${sessionId}/feedback`, {
+    method: 'POST',
+    body: JSON.stringify(feedback),
+  });
+}

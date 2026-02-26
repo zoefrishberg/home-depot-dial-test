@@ -1,18 +1,21 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Gift, Lock, Heart, X } from "lucide-react";
+import { saveDialData } from "../../utils/api";
 
 interface TutorialProps {
+  sessionId: string | null;
   onComplete: () => void;
 }
 
-export function DialTestTutorial({ onComplete }: TutorialProps) {
+export function DialTestTutorial({ sessionId, onComplete }: TutorialProps) {
   const [intensity, setIntensity] = useState(0); // -100 to 100
   const [activeButton, setActiveButton] = useState<"negative" | "positive" | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [dataPoints, setDataPoints] = useState<Array<{ time: number; value: number }>>([]);
   const [hasStarted, setHasStarted] = useState(false);
+  const [recordedDataPoints, setRecordedDataPoints] = useState<Array<{ timestamp: number; button: string | null; intensity: number }>>([]);
   
   const intensityInterval = useRef<NodeJS.Timeout | null>(null);
   const videoInterval = useRef<NodeJS.Timeout | null>(null);
@@ -71,8 +74,15 @@ export function DialTestTutorial({ onComplete }: TutorialProps) {
   useEffect(() => {
     if (isPlaying) {
       setDataPoints(prev => [...prev, { time: currentTime, value: intensity }]);
+      
+      // Record for database (every 100ms)
+      setRecordedDataPoints(prev => [...prev, {
+        timestamp: currentTime,
+        button: activeButton,
+        intensity: intensity
+      }]);
     }
-  }, [currentTime, intensity, isPlaying]);
+  }, [currentTime, intensity, isPlaying, activeButton]);
 
   const handleButtonPress = (type: "negative" | "positive") => {
     setActiveButton(type);
@@ -170,6 +180,19 @@ export function DialTestTutorial({ onComplete }: TutorialProps) {
   const instruction = getInstructionText();
   const progress = ((currentTime / tutorialDuration) * 100);
 
+  // Save tutorial data when completed
+  const handleContinue = async () => {
+    if (sessionId && recordedDataPoints.length > 0) {
+      try {
+        await saveDialData(sessionId, 'tutorial', recordedDataPoints);
+        console.log(`Saved ${recordedDataPoints.length} tutorial data points`);
+      } catch (error) {
+        console.error("Failed to save tutorial data:", error);
+      }
+    }
+    onComplete();
+  };
+
   return (
     <div className="min-h-screen bg-[#E8E8E8] flex flex-col">
       {/* Header */}
@@ -195,18 +218,18 @@ export function DialTestTutorial({ onComplete }: TutorialProps) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 py-6 overflow-y-auto">
+      <main className="flex-1 px-4 py-4 overflow-y-auto">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-xl text-[#3D3D3D] mb-2">
             Tutorial: How to Respond
           </h1>
-          <p className="text-sm text-gray-600 mb-6">
+          <p className="text-sm text-gray-600 mb-4">
             ⏱ Press and hold a button to show how you feel.<br />
             The longer you hold, the stronger your reaction.
           </p>
 
           {/* Video Player with Instructions */}
-          <div className="bg-black rounded-lg overflow-hidden mb-6 shadow-lg relative">
+          <div className="bg-black rounded-lg overflow-hidden mb-4 shadow-lg relative">
             {/* Full square (1:1) container like real video */}
             <div className="w-full aspect-square bg-black relative">
               {/* 4:3 Tutorial content with letterboxing */}
@@ -274,17 +297,22 @@ export function DialTestTutorial({ onComplete }: TutorialProps) {
           </div>
 
           {/* Emotion intensity indicator - between video and buttons */}
-          <div className="mb-4">
-            <div className="bg-white rounded-lg px-4 py-3 flex items-center justify-between shadow-sm border border-gray-200">
-              <span className="text-gray-700 font-semibold text-sm">{getEmotionLabel()}</span>
-              {/* Continuous intensity meter */}
-              <div className="flex-1 max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden ml-4">
-                <div 
-                  className="h-full rounded-full transition-all duration-100"
-                  style={{ 
-                    width: `${Math.abs(intensity)}%`,
-                    backgroundColor: intensity > 0 ? '#22C55E' : intensity < 0 ? '#EF4444' : '#9CA3AF',
-                    marginLeft: intensity < 0 ? `${100 - Math.abs(intensity)}%` : '0'
+          <div className="mb-3">
+            <div className="bg-white rounded-lg px-4 py-3 shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-gray-700 font-semibold text-sm">{getEmotionLabel()}</span>
+              </div>
+              {/* Centered bidirectional intensity meter */}
+              <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+                {/* Center marker */}
+                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-400 z-10 -translate-x-1/2"></div>
+                {/* Fill bar */}
+                <div
+                  className="absolute top-0 bottom-0 rounded-full transition-all duration-100"
+                  style={{
+                    backgroundColor: intensity > 0 ? '#22C55E' : intensity < 0 ? '#EF4444' : 'transparent',
+                    left: intensity < 0 ? `${50 - (Math.abs(intensity) / 100) * 50}%` : '50%',
+                    width: `${(Math.abs(intensity) / 100) * 50}%`,
                   }}
                 ></div>
               </div>
@@ -292,7 +320,7 @@ export function DialTestTutorial({ onComplete }: TutorialProps) {
           </div>
 
           {/* Hold Buttons */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-2 gap-3 mb-3">
             <button
               onPointerDown={() => handleButtonPress("negative")}
               onPointerUp={handleButtonRelease}
@@ -320,25 +348,19 @@ export function DialTestTutorial({ onComplete }: TutorialProps) {
             </button>
           </div>
 
-          <p className="text-center text-xs text-gray-500 mb-4">
+          <p className="text-center text-xs text-gray-500 mb-2">
             Hold longer for stronger feelings.<br />
             Release to return to neutral.
           </p>
 
-          {/* Recording Indicator */}
-          {isPlaying && (
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-              <span>Recording your practice responses...</span>
-            </div>
-          )}
+          {/* Recording Indicator removed */}
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#E8E8E8] px-4 py-6 border-t border-gray-300">
+      <footer className="bg-[#E8E8E8] px-4 py-4 border-t border-gray-300">
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-center gap-2 mb-4 text-gray-500 text-sm">
+          <div className="flex items-center justify-center gap-2 mb-3 text-gray-500 text-sm">
             <Lock className="w-4 h-4" />
             <span>Your answer is private</span>
           </div>
@@ -357,7 +379,7 @@ export function DialTestTutorial({ onComplete }: TutorialProps) {
               Restart
             </Button>
             <Button
-              onClick={onComplete}
+              onClick={handleContinue}
               disabled={currentTime < tutorialDuration}
               className="flex-1 bg-[#5B9FED] hover:bg-[#4A8EDC] text-white border-0 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
             >

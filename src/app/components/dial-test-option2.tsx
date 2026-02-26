@@ -1,73 +1,92 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Gift, Lock, Heart, X } from "lucide-react";
+import { Gift, Lock, Heart, X, Volume2, Play } from "lucide-react";
+import { saveDialData, recordPageCompletion } from "../../utils/api";
 
 interface DataPoint {
   timestamp: number;
   value: number; // -100 to 100, where negative is "losing me" and positive is "into it"
 }
 
-export function DialTestOption2() {
+interface DialTestOption2Props {
+  sessionId: string | null;
+  onComplete?: () => void;
+}
+
+export function DialTestOption2({ sessionId, onComplete }: DialTestOption2Props) {
   const [intensity, setIntensity] = useState(0); // -100 to 100
   const [isPlaying, setIsPlaying] = useState(false);
   const [dataPoints, setDataPoints] = useState<DataPoint[]>([]);
   const [activeButton, setActiveButton] = useState<"negative" | "positive" | null>(null);
   const [videoDuration, setVideoDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [hasEnded, setHasEnded] = useState(false);
+  const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
+  const [recordedDataPoints, setRecordedDataPoints] = useState<Array<{ timestamp: number; button: string | null; intensity: number }>>([]);
   
-  const playerRef = useRef<any>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const recordingInterval = useRef<NodeJS.Timeout | null>(null);
   const intensityInterval = useRef<NodeJS.Timeout | null>(null);
-  const timeUpdateInterval = useRef<NodeJS.Timeout | null>(null);
-  const intensityRef = useRef(0); // Track current intensity value
+  const intensityRef = useRef(0);
+  const activeButtonRef = useRef<"negative" | "positive" | null>(null);
+
+  const VIDEO_SRC = "https://vod-prod-02-source-u4t2w48mf8oc.s3.amazonaws.com/5ad7d3c623a9b5d7aec16c1c-38b5d74b0144255d9279ac39376df9de.mp4";
 
   // Keep intensityRef in sync with intensity state
   useEffect(() => {
     intensityRef.current = intensity;
   }, [intensity]);
 
-  // Load YouTube IFrame API
+  // Keep activeButtonRef in sync with activeButton state
   useEffect(() => {
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+    activeButtonRef.current = activeButton;
+  }, [activeButton]);
 
-    (window as any).onYouTubeIframeAPIReady = () => {
-      playerRef.current = new (window as any).YT.Player('youtube-player-2', {
-        videoId: 'PTXvuzFLYxE',
-        playerVars: {
-          'playsinline': 1
-        },
-        events: {
-          'onStateChange': onPlayerStateChange
-        }
-      });
-    };
+  // Video event handlers
+  const handlePlay = () => setIsPlaying(true);
+  const handlePause = () => setIsPlaying(false);
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setHasEnded(true);
+  };
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setVideoDuration(videoRef.current.duration);
+    }
+  };
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
 
+  // Cleanup intervals on unmount
+  useEffect(() => {
     return () => {
       if (recordingInterval.current) clearInterval(recordingInterval.current);
       if (intensityInterval.current) clearInterval(intensityInterval.current);
-      if (timeUpdateInterval.current) clearInterval(timeUpdateInterval.current);
     };
   }, []);
-
-  const onPlayerStateChange = (event: any) => {
-    if (event.data === (window as any).YT.PlayerState.PLAYING) {
-      setIsPlaying(true);
-    } else {
-      setIsPlaying(false);
-    }
-  };
 
   // Record data points while video is playing
   useEffect(() => {
     if (isPlaying) {
       recordingInterval.current = setInterval(() => {
-        if (playerRef.current) {
+        if (videoRef.current) {
+          const timestamp = videoRef.current.currentTime;
+          const currentIntensity = intensityRef.current;
+          const currentButton = activeButtonRef.current;
+          
           setDataPoints(prev => [...prev, {
-            timestamp: playerRef.current.getCurrentTime(),
-            value: intensityRef.current // Use ref instead of closure
+            timestamp: timestamp,
+            value: currentIntensity
+          }]);
+          
+          // Record for database (every 100ms)
+          setRecordedDataPoints(prev => [...prev, {
+            timestamp: timestamp,
+            button: currentButton,
+            intensity: currentIntensity
           }]);
         }
       }, 100);
@@ -82,7 +101,7 @@ export function DialTestOption2() {
         clearInterval(recordingInterval.current);
       }
     };
-  }, [isPlaying]); // Remove intensity from dependencies
+  }, [isPlaying]);
 
   // Handle intensity changes (increase while holding, decay when not)
   useEffect(() => {
@@ -113,28 +132,6 @@ export function DialTestOption2() {
     };
   }, [activeButton]);
 
-  // Update current time and video duration
-  useEffect(() => {
-    if (isPlaying) {
-      timeUpdateInterval.current = setInterval(() => {
-        if (playerRef.current) {
-          setCurrentTime(playerRef.current.getCurrentTime());
-          setVideoDuration(playerRef.current.getDuration());
-        }
-      }, 100);
-    } else {
-      if (timeUpdateInterval.current) {
-        clearInterval(timeUpdateInterval.current);
-      }
-    }
-
-    return () => {
-      if (timeUpdateInterval.current) {
-        clearInterval(timeUpdateInterval.current);
-      }
-    };
-  }, [isPlaying]);
-
   const handleButtonPress = (type: "negative" | "positive") => {
     setActiveButton(type);
   };
@@ -143,9 +140,22 @@ export function DialTestOption2() {
     setActiveButton(null);
   };
 
-  const handleSubmit = () => {
-    alert(`Dial test completed! Recorded ${dataPoints.length} data points.`);
-    console.log("Data points:", dataPoints);
+  const handleSubmit = async () => {
+    if (sessionId && recordedDataPoints.length > 0) {
+      try {
+        await saveDialData(sessionId, 'actual', recordedDataPoints);
+        await recordPageCompletion(sessionId, 'dialTest');
+        console.log(`Saved ${recordedDataPoints.length} dial test data points`);
+        if (onComplete) {
+          onComplete();
+        }
+      } catch (error) {
+        console.error("Failed to save dial test data:", error);
+        alert("Failed to save your responses. Please try again.");
+      }
+    } else if (onComplete) {
+      onComplete();
+    }
   };
 
   // Get visual properties based on intensity
@@ -211,6 +221,13 @@ export function DialTestOption2() {
     return (currentTime / videoDuration) * 100;
   };
 
+  const handleStartVideo = () => {
+    if (videoRef.current) {
+      videoRef.current.play();
+      setHasStartedPlaying(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#E8E8E8] flex flex-col">
       {/* Header */}
@@ -239,12 +256,42 @@ export function DialTestOption2() {
             Watch the video and share your reaction
           </h1>
           <p className="text-sm text-gray-600 mb-6">
-            Hold a button to show how you feel. The longer you hold, the stronger the feeling.
+            ⏱ Press and hold a button to show how you feel.<br />
+            The longer you hold, the stronger your reaction.
           </p>
 
           {/* Video Player */}
           <div className="bg-black rounded-lg overflow-hidden mb-6 shadow-lg relative">
-            <div id="youtube-player-2" className="w-full aspect-video"></div>
+            <video
+              ref={videoRef}
+              className="w-full aspect-video"
+              src={VIDEO_SRC}
+              playsInline
+              onPlay={handlePlay}
+              onPause={handlePause}
+              onEnded={handleEnded}
+              onLoadedMetadata={handleLoadedMetadata}
+              onTimeUpdate={handleTimeUpdate}
+              controls={hasStartedPlaying}
+            >
+              Your browser does not support the video tag.
+            </video>
+
+            {/* Pre-play overlay */}
+            {!hasStartedPlaying && (
+              <div
+                className="absolute inset-0 bg-black flex flex-col items-center justify-center cursor-pointer z-20"
+                onClick={handleStartVideo}
+              >
+                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-6 hover:bg-white/30 transition-colors">
+                  <Play className="w-8 h-8 text-white ml-1" fill="white" />
+                </div>
+                <div className="flex items-center gap-2 text-white/80 text-sm">
+                  <Volume2 className="w-5 h-5" />
+                  <span>Turn your sound on before playing</span>
+                </div>
+              </div>
+            )}
             
             {/* Emotion Curve Overlay */}
             <div className="absolute inset-0 pointer-events-none">
@@ -297,16 +344,21 @@ export function DialTestOption2() {
 
           {/* Emotion intensity indicator - between video and buttons */}
           <div className="mb-4">
-            <div className="bg-white rounded-lg px-4 py-3 flex items-center justify-between shadow-sm border border-gray-200">
-              <span className="text-gray-700 font-semibold text-sm">{getEmotionLabel()}</span>
-              {/* Continuous intensity meter */}
-              <div className="flex-1 max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden ml-4">
-                <div 
-                  className="h-full rounded-full transition-all duration-100"
-                  style={{ 
-                    width: `${Math.abs(intensity)}%`,
-                    backgroundColor: intensity > 0 ? '#22C55E' : intensity < 0 ? '#EF4444' : '#9CA3AF',
-                    marginLeft: intensity < 0 ? `${100 - Math.abs(intensity)}%` : '0'
+            <div className="bg-white rounded-lg px-4 py-3 shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-gray-700 font-semibold text-sm">{getEmotionLabel()}</span>
+              </div>
+              {/* Centered bidirectional intensity meter */}
+              <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+                {/* Center marker */}
+                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-400 z-10 -translate-x-1/2"></div>
+                {/* Fill bar */}
+                <div
+                  className="absolute top-0 bottom-0 rounded-full transition-all duration-100"
+                  style={{
+                    backgroundColor: intensity > 0 ? '#22C55E' : intensity < 0 ? '#EF4444' : 'transparent',
+                    left: intensity < 0 ? `${50 - (Math.abs(intensity) / 100) * 50}%` : '50%',
+                    width: `${(Math.abs(intensity) / 100) * 50}%`,
                   }}
                 ></div>
               </div>
@@ -343,7 +395,8 @@ export function DialTestOption2() {
           </div>
 
           <p className="text-center text-xs text-gray-500 mb-4">
-            Hold longer for stronger feelings • Release to return to neutral
+            Hold longer for stronger feelings.<br />
+            Release to return to neutral.
           </p>
 
           {/* Recording Indicator */}
