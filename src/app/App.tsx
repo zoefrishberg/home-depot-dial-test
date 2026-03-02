@@ -3,13 +3,15 @@ import { DialTestOption2 } from "./components/dial-test-option2";
 import { DialTestTutorial } from "./components/dial-test-tutorial";
 import { DialTestSlider } from "./components/dial-test-slider";
 import { DialTestTutorialSlider } from "./components/dial-test-tutorial-slider";
+import { DialTestEmotiveButtons } from "./components/dial-test-emotive-buttons";
+import { DialTestTutorialEmotiveButtons } from "./components/dial-test-tutorial-emotive-buttons";
 import { DialTestIntro } from "./components/dial-test-intro";
 import { FeedbackTypeform } from "./components/feedback-typeform";
 import { createSession, recordPageCompletion, saveFeedback } from "../utils/api";
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
 type AppStep = "intro" | "tutorial" | "dialTest" | "feedback" | "complete";
-type Variant = "buttons" | "slider";
+type Variant = "buttons" | "slider" | "emotive-buttons";
 
 export default function App() {
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -32,9 +34,13 @@ export default function App() {
     
     let assignedVariant: Variant;
     
-    if (urlVariant === 'slider' || urlVariant === 'buttons' || urlVariant === 'button') {
+    if (urlVariant === 'slider' || urlVariant === 'buttons' || urlVariant === 'button' || urlVariant === 'emotive-buttons') {
       // Manual override via URL parameter (handle both 'button' and 'buttons')
-      assignedVariant = urlVariant === 'button' ? 'buttons' : urlVariant as Variant;
+      if (urlVariant === 'button') {
+        assignedVariant = 'buttons';
+      } else {
+        assignedVariant = urlVariant as Variant;
+      }
       console.log("A/B Test - Manual variant from URL:", assignedVariant);
     } else {
       // Random assignment for actual users
@@ -175,13 +181,21 @@ export default function App() {
     case "intro":
       return <DialTestIntro onContinue={handleIntroComplete} />;
     case "tutorial":
-      return variant === "buttons"
-        ? <DialTestTutorial sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} />
-        : <DialTestTutorialSlider sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} />;
+      if (variant === "emotive-buttons") {
+        return <DialTestTutorialEmotiveButtons sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} />;
+      } else if (variant === "buttons") {
+        return <DialTestTutorial sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} />;
+      } else {
+        return <DialTestTutorialSlider sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} />;
+      }
     case "dialTest":
-      return variant === "buttons"
-        ? <DialTestOption2 sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} />
-        : <DialTestSlider sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} />;
+      if (variant === "buttons") {
+        return <DialTestOption2 sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} />;
+      } else if (variant === "emotive-buttons") {
+        return <DialTestEmotiveButtons sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} />;
+      } else {
+        return <DialTestSlider sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} />;
+      }
     case "feedback":
       return (
         <FeedbackTypeform

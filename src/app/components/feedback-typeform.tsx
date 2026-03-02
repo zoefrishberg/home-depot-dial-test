@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 
 interface FeedbackTypeformProps {
   sessionId: string | null;
-  variant?: "buttons" | "slider";
+  variant?: "buttons" | "slider" | "emotive-buttons";
   onSubmit: (answers: {
     easeOfUse: string;
     attentionDifficulty: string;

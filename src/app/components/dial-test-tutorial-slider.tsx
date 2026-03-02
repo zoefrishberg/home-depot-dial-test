@@ -450,7 +450,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete }: TutorialProps)
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerUp}
                   onPointerLeave={handlePointerLeave}
-                  className="relative w-5 h-full rounded-full cursor-pointer touch-none z-10"
+                  className="relative w-7 h-full rounded-full cursor-pointer touch-none z-10"
                   style={{
                     background: 'linear-gradient(to bottom, #29A347 0%, #E8E8E8 50%, #B8392E 100%)'
                   }}
@@ -460,7 +460,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete }: TutorialProps)
                   
                   {/* Fader Cap */}
                   <div 
-                    className="absolute left-1/2 w-12 h-8 bg-[#5B9FED] rounded-lg shadow-xl border-2 border-gray-300 flex items-center justify-center"
+                    className="absolute left-1/2 w-17 h-8 bg-[#5B9FED] rounded-lg shadow-xl border-2 border-gray-300 flex items-center justify-center"
                     style={{ 
                       top: `${faderPosition}%`,
                       transform: `translate(-50%, -50%) ${isTouching ? 'scale(1.1)' : 'scale(1)'}`,
