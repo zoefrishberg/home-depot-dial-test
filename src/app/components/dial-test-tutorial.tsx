@@ -19,26 +19,32 @@ export function DialTestTutorial({ sessionId, onComplete }: TutorialProps) {
   
   const intensityInterval = useRef<NodeJS.Timeout | null>(null);
   const videoInterval = useRef<NodeJS.Timeout | null>(null);
-  const tutorialDuration = 20; // 20 second tutorial
+  const tutorialDuration = 24; // 24 second tutorial
+  const [holdDuration, setHoldDuration] = useState(0);
 
   // Handle intensity changes (increase while holding, decay when not)
   useEffect(() => {
     intensityInterval.current = setInterval(() => {
       setIntensity(prev => {
         if (activeButton === "positive") {
-          return Math.min(100, prev + 2);
+          return Math.min(100, prev + 4);
         } else if (activeButton === "negative") {
-          return Math.max(-100, prev - 2);
+          return Math.max(-100, prev - 4);
         } else {
           // Decay toward neutral
           if (prev > 0) {
-            return Math.max(0, prev - 1);
+            return Math.max(0, prev - 2);
           } else if (prev < 0) {
-            return Math.min(0, prev + 1);
+            return Math.min(0, prev + 2);
           }
           return 0;
         }
       });
+      
+      // Increment hold duration when button is active
+      if (activeButton) {
+        setHoldDuration(prev => prev + 100);
+      }
     }, 100);
 
     return () => {
@@ -86,6 +92,7 @@ export function DialTestTutorial({ sessionId, onComplete }: TutorialProps) {
 
   const handleButtonPress = (type: "negative" | "positive") => {
     setActiveButton(type);
+    setHoldDuration(0); // Reset hold duration on new press
     if (!hasStarted) {
       setHasStarted(true);
       setIsPlaying(true);
@@ -94,12 +101,7 @@ export function DialTestTutorial({ sessionId, onComplete }: TutorialProps) {
 
   const handleButtonRelease = () => {
     setActiveButton(null);
-  };
-
-  const getEmotionLabel = () => {
-    if (intensity === 0) return "Neutral";
-    if (intensity > 0) return `Positive ${intensity}%`;
-    return `Negative ${Math.abs(intensity)}%`;
+    setHoldDuration(0); // Reset hold duration on release
   };
 
   const getCurrentPositionX = () => {
@@ -141,28 +143,33 @@ export function DialTestTutorial({ sessionId, onComplete }: TutorialProps) {
     if (!hasStarted) {
       return {
         title: "Let's practice first",
-        text: "👇 Press and hold the red LOSING ME button"
+        text: "👇 Press and hold the green INTO IT button"
       };
     }
-    if (currentTime < 2) {
+    if (currentTime < 4) {
       return {
         title: "Press and Hold",
-        text: "Press and hold the red LOSING ME button"
+        text: "Green indicates you're enjoying what you see in the video"
       };
-    } else if (currentTime < 5) {
+    } else if (currentTime < 8) {
       return {
-        title: "Watch Your Reaction",
-        text: "See how the curve moves as you hold the button"
+        title: "Press and Hold",
+        text: "The longer you hold, the stronger your reaction"
       };
-    } else if (currentTime < 10) {
+    } else if (currentTime < 12) {
+      return {
+        title: "Release",
+        text: "The curve returns to neutral when you release"
+      };
+    } else if (currentTime < 16) {
       return {
         title: "Try the Other Button",
-        text: "Now try holding the green INTO IT button"
+        text: "Now try holding the red LOSING ME button"
       };
-    } else if (currentTime < 15) {
+    } else if (currentTime < 20) {
       return {
-        title: "Control Intensity",
-        text: "Hold longer for stronger feelings. Release to return to neutral."
+        title: "Watch Your Reaction",
+        text: "Red indicates you dislike what you see in the video"
       };
     } else if (currentTime < tutorialDuration) {
       return {
@@ -171,8 +178,8 @@ export function DialTestTutorial({ sessionId, onComplete }: TutorialProps) {
       };
     } else {
       return {
-        title: "You're Ready!",
-        text: "Great job! Click Continue to start the actual video."
+        title: "Next you'll see the actual video",
+        text: "Share how you feel as the video plays, using the same buttons"
       };
     }
   };
@@ -194,37 +201,37 @@ export function DialTestTutorial({ sessionId, onComplete }: TutorialProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#E8E8E8] flex flex-col">
-      {/* Header */}
-      <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between">
+    <div className="min-h-[100dvh] bg-[#E8E8E8] flex flex-col">
+      {/* Header - More Compact */}
+      <header className="bg-[#3D3D3D] px-3 py-2 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 border-2 border-white rounded flex items-center justify-center">
-            <div className="w-3 h-3 bg-white" style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}></div>
+          <div className="w-5 h-5 border-2 border-white rounded flex items-center justify-center">
+            <div className="w-2.5 h-2.5 bg-white" style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}></div>
           </div>
-          <span className="text-white font-medium">NELSurveys</span>
+          <span className="text-white font-medium text-sm">NELSurveys</span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="w-20 h-2 bg-gray-600 rounded-full overflow-hidden">
+        <div className="flex items-center gap-2">
+          <div className="w-16 h-1.5 bg-gray-600 rounded-full overflow-hidden">
             <div 
               className="h-full bg-[#5B9FED] transition-all duration-300" 
               style={{ width: `${progress}%` }}
             ></div>
           </div>
-          <div className="w-5 h-5 bg-gray-600 rounded-full flex items-center justify-center">
-            <div className="w-3 h-3 bg-white rounded-full"></div>
+          <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center">
+            <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
           </div>
-          <Gift className="w-5 h-5 text-white" />
+          <Gift className="w-4 h-4 text-white" />
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 px-4 py-4 overflow-y-auto">
+      {/* Main Content - Optimized spacing */}
+      <main className="flex-1 px-3 py-2 overflow-y-auto min-h-0">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-xl text-[#3D3D3D] mb-2">
-            Tutorial: How to Respond
+          <h1 className="text-lg text-[#3D3D3D] mb-1">
+            Tutorial
           </h1>
-          <p className="text-sm text-gray-600 mb-4">
-            ⏱ Press and hold a button to show how you feel.<br />
+          <p className="text-xs text-gray-600 mb-2">
+            ⏱ Press and hold a button to show how you feel as you watch.<br />
             The longer you hold, the stronger your reaction.
           </p>
 
@@ -234,7 +241,7 @@ export function DialTestTutorial({ sessionId, onComplete }: TutorialProps) {
             <div className="w-full aspect-square bg-black relative">
               {/* 4:3 Tutorial content with letterboxing */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-full aspect-[4/3] bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center relative">
+                <div className="w-full aspect-[4/3] bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-start pt-16 justify-center relative">
                   <div className="text-center px-8 z-10">
                     <h2 className="text-3xl font-bold text-white mb-4">
                       {instruction.title}
@@ -296,64 +303,84 @@ export function DialTestTutorial({ sessionId, onComplete }: TutorialProps) {
             </div>
           </div>
 
-          {/* Emotion intensity indicator - between video and buttons */}
-          <div className="mb-3">
-            <div className="bg-white rounded-lg px-4 py-3 shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-gray-700 font-semibold text-sm">{getEmotionLabel()}</span>
-              </div>
-              {/* Centered bidirectional intensity meter */}
-              <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
-                {/* Center marker */}
-                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-400 z-10 -translate-x-1/2"></div>
-                {/* Fill bar */}
-                <div
-                  className="absolute top-0 bottom-0 rounded-full transition-all duration-100"
-                  style={{
-                    backgroundColor: intensity > 0 ? '#22C55E' : intensity < 0 ? '#EF4444' : 'transparent',
-                    left: intensity < 0 ? `${50 - (Math.abs(intensity) / 100) * 50}%` : '50%',
-                    width: `${(Math.abs(intensity) / 100) * 50}%`,
-                  }}
-                ></div>
-              </div>
-            </div>
-          </div>
-
           {/* Hold Buttons */}
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <button
-              onPointerDown={() => handleButtonPress("negative")}
-              onPointerUp={handleButtonRelease}
-              onPointerLeave={handleButtonRelease}
-              style={{ backgroundColor: 'rgba(235, 85, 71, 1)' }}
-              className={`hover:opacity-90 active:opacity-100 border-2 border-[rgba(220,70,56,1)] rounded-lg p-4 flex flex-col items-center gap-2 transition-all select-none ${
-                activeButton === "negative" ? "scale-95 shadow-inner" : "shadow-sm"
-              }`}
-            >
-              <X className="w-8 h-8 text-white" strokeWidth={2.5} />
-              <span className="font-semibold text-white text-xs">LOSING ME</span>
-            </button>
+            <div className="flex flex-col">
+              {/* Horizontal LED intensity bars - above button */}
+              <div className="flex gap-1 mb-2 justify-center">
+                {[1, 2, 3, 4, 5].map((level) => {
+                  // Each LED lights up at 1s intervals
+                  const thresholdMs = level * 1000;
+                  const isActive = activeButton === "negative" && holdDuration >= thresholdMs;
+                  return (
+                    <div
+                      key={level}
+                      className={`w-4 h-2 rounded-[1px] transition-all duration-100 ${
+                        isActive ? 'bg-[#EB5547]' : 'bg-[#E8E8E8]'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
 
-            <button
-              onPointerDown={() => handleButtonPress("positive")}
-              onPointerUp={handleButtonRelease}
-              onPointerLeave={handleButtonRelease}
-              style={{ backgroundColor: 'rgba(44, 195, 82, 1)' }}
-              className={`hover:opacity-90 active:opacity-100 border-2 border-[rgba(34,175,67,1)] rounded-lg p-4 flex flex-col items-center gap-2 transition-all select-none ${
-                activeButton === "positive" ? "scale-95 shadow-inner" : "shadow-sm"
-              }`}
-            >
-              <Heart className="w-8 h-8 text-white" strokeWidth={2.5} />
-              <span className="font-semibold text-white text-xs">INTO IT</span>
-            </button>
+              <button
+                onPointerDown={() => handleButtonPress("negative")}
+                onPointerUp={handleButtonRelease}
+                onPointerLeave={handleButtonRelease}
+                onContextMenu={(e) => e.preventDefault()}
+                style={{ 
+                  backgroundColor: 'rgba(235, 85, 71, 1)',
+                  WebkitUserSelect: 'none',
+                  WebkitTouchCallout: 'none',
+                  userSelect: 'none'
+                }}
+                className={`hover:opacity-90 active:opacity-100 border-2 border-[rgba(220,70,56,1)] rounded-lg p-4 flex flex-col items-center gap-2 transition-all select-none touch-none ${
+                  activeButton === "negative" ? "scale-95 shadow-inner" : "shadow-sm"
+                }`}
+              >
+                <X className="w-8 h-8 text-white" strokeWidth={2.5} />
+                <span className="font-semibold text-white text-xs">LOSING ME</span>
+              </button>
+            </div>
+
+            <div className="flex flex-col">
+              {/* Horizontal LED intensity bars - above button */}
+              <div className="flex gap-1 mb-2 justify-center">
+                {[1, 2, 3, 4, 5].map((level) => {
+                  // Each LED lights up at 1s intervals 
+                  const thresholdMs = level * 1000;
+                  const isActive = activeButton === "positive" && holdDuration >= thresholdMs;
+                  return (
+                    <div
+                      key={level}
+                      className={`w-4 h-2 rounded-[1px] transition-all duration-100 ${
+                        isActive ? 'bg-[#2CC352]' : 'bg-[#E8E8E8]'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+
+              <button
+                onPointerDown={() => handleButtonPress("positive")}
+                onPointerUp={handleButtonRelease}
+                onPointerLeave={handleButtonRelease}
+                onContextMenu={(e) => e.preventDefault()}
+                style={{ 
+                  backgroundColor: 'rgba(44, 195, 82, 1)',
+                  WebkitUserSelect: 'none',
+                  WebkitTouchCallout: 'none',
+                  userSelect: 'none'
+                }}
+                className={`hover:opacity-90 active:opacity-100 border-2 border-[rgba(34,175,67,1)] rounded-lg p-4 flex flex-col items-center gap-2 transition-all select-none touch-none ${
+                  activeButton === "positive" ? "scale-95 shadow-inner" : "shadow-sm"
+                }`}
+              >
+                <Heart className="w-8 h-8 text-white" strokeWidth={2.5} />
+                <span className="font-semibold text-white text-xs">INTO IT</span>
+              </button>
+            </div>
           </div>
-
-          <p className="text-center text-xs text-gray-500 mb-2">
-            Hold longer for stronger feelings.<br />
-            Release to return to neutral.
-          </p>
-
-          {/* Recording Indicator removed */}
         </div>
       </main>
 

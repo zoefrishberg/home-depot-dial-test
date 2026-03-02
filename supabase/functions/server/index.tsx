@@ -31,11 +31,16 @@ app.post("/make-server-640b0dec/session/create", async (c) => {
   try {
     const sessionId = uuidv4();
     const timestamp = new Date().toISOString();
+    const body = await c.req.json();
+    const variant = body?.variant || "unknown";
+    const deviceInfo = body?.deviceInfo || null;
     
     const sessionData = {
       sessionId,
       createdAt: timestamp,
       status: "active",
+      variant, // Store A/B test variant
+      deviceInfo, // Store device type, platform, browser, screen size, etc.
       pages: {
         intro: { completed: false },
         tutorial: { completed: false },
@@ -44,6 +49,8 @@ app.post("/make-server-640b0dec/session/create", async (c) => {
     };
     
     await kv.set(`session:${sessionId}`, sessionData);
+    
+    console.log(`Session created: ${sessionId}, Variant: ${variant}, Device: ${deviceInfo?.deviceType || 'unknown'} (${deviceInfo?.platform || 'unknown'})`);
     
     return c.json({ 
       success: true, 
@@ -99,16 +106,23 @@ app.post("/make-server-640b0dec/session/:sessionId/dialdata", async (c) => {
     const sessionId = c.req.param("sessionId");
     const { pageType, dataPoints } = await c.req.json();
     
-    // pageType: "tutorial" or "actual"
+    // pageType: "tutorial" or "actual" (or "video" for slider variant)
     // dataPoints: array of { timestamp, button, intensity }
+    
+    // Get the session to retrieve the variant
+    const session = await kv.get(`session:${sessionId}`);
+    const variant = session?.variant || "unknown";
     
     const dataKey = `dialdata:${sessionId}:${pageType}`;
     const existingData = await kv.get(dataKey) || { dataPoints: [] };
     
     existingData.dataPoints.push(...dataPoints);
     existingData.lastUpdated = new Date().toISOString();
+    existingData.variant = variant; // Store variant with the data
     
     await kv.set(dataKey, existingData);
+    
+    console.log(`Saved ${dataPoints.length} dial data points for session ${sessionId} (${variant} variant, ${pageType})`);
     
     return c.json({ 
       success: true,
@@ -176,22 +190,77 @@ app.get("/make-server-640b0dec/session/:sessionId", async (c) => {
       }, 404);
     }
     
+    // Get all possible dial data keys (tutorial, actual, video)
     const tutorialData = await kv.get(`dialdata:${sessionId}:tutorial`);
     const actualData = await kv.get(`dialdata:${sessionId}:actual`);
+    const videoData = await kv.get(`dialdata:${sessionId}:video`);
+    const feedbackData = await kv.get(`feedback:${sessionId}`);
     
     return c.json({ 
       success: true,
       session,
       dialData: {
         tutorial: tutorialData,
-        actual: actualData
-      }
+        actual: actualData || videoData, // Handle both pageType names
+      },
+      feedback: feedbackData
     });
   } catch (error) {
     console.error("Error retrieving session:", error);
     return c.json({ 
       success: false, 
       error: `Failed to retrieve session: ${error}` 
+    }, 500);
+  }
+});
+
+// Get all sessions (for analysis/export)
+app.get("/make-server-640b0dec/sessions/all", async (c) => {
+  try {
+    // Get all session keys
+    const sessionKeys = await kv.getByPrefix("session:");
+    
+    if (!sessionKeys || sessionKeys.length === 0) {
+      return c.json({
+        success: true,
+        sessions: [],
+        count: 0,
+        message: "No sessions found"
+      });
+    }
+    
+    // Enrich each session with its associated data
+    const enrichedSessions = await Promise.all(
+      sessionKeys.map(async (session: any) => {
+        const sessionId = session.sessionId;
+        
+        // Get dial data
+        const tutorialData = await kv.get(`dialdata:${sessionId}:tutorial`);
+        const actualData = await kv.get(`dialdata:${sessionId}:actual`);
+        const videoData = await kv.get(`dialdata:${sessionId}:video`);
+        const feedbackData = await kv.get(`feedback:${sessionId}`);
+        
+        return {
+          session,
+          dialData: {
+            tutorial: tutorialData,
+            actual: actualData || videoData,
+          },
+          feedback: feedbackData
+        };
+      })
+    );
+    
+    return c.json({
+      success: true,
+      sessions: enrichedSessions,
+      count: enrichedSessions.length
+    });
+  } catch (error) {
+    console.error("Error retrieving all sessions:", error);
+    return c.json({
+      success: false,
+      error: `Failed to retrieve sessions: ${error}`
     }, 500);
   }
 });

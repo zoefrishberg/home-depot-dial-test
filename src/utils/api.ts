@@ -1,4 +1,5 @@
 import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { DeviceInfo } from './deviceDetection';
 
 const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-640b0dec`;
 
@@ -24,9 +25,10 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
 }
 
 // Session management
-export async function createSession() {
+export async function createSession(variant?: string, deviceInfo?: DeviceInfo) {
   return apiCall('/session/create', {
     method: 'POST',
+    body: JSON.stringify({ variant, deviceInfo }),
   });
 }
 
@@ -39,7 +41,7 @@ export async function recordPageCompletion(sessionId: string, pageName: string) 
 
 export async function saveDialData(
   sessionId: string,
-  pageType: 'tutorial' | 'actual',
+  pageType: 'tutorial' | 'actual' | 'video',
   dataPoints: Array<{ timestamp: number; button: string | null; intensity: number }>
 ) {
   return apiCall(`/session/${sessionId}/dialdata`, {
@@ -67,5 +69,12 @@ export async function saveFeedback(
   return apiCall(`/session/${sessionId}/feedback`, {
     method: 'POST',
     body: JSON.stringify(feedback),
+  });
+}
+
+// Analysis endpoints
+export async function getAllSessions() {
+  return apiCall('/sessions/all', {
+    method: 'GET',
   });
 }

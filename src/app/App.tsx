@@ -1,15 +1,49 @@
 import { useState, useEffect } from "react";
 import { DialTestOption2 } from "./components/dial-test-option2";
 import { DialTestTutorial } from "./components/dial-test-tutorial";
+import { DialTestSlider } from "./components/dial-test-slider";
+import { DialTestTutorialSlider } from "./components/dial-test-tutorial-slider";
 import { DialTestIntro } from "./components/dial-test-intro";
 import { FeedbackTypeform } from "./components/feedback-typeform";
 import { createSession, recordPageCompletion, saveFeedback } from "../utils/api";
+import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
 type AppStep = "intro" | "tutorial" | "dialTest" | "feedback" | "complete";
+type Variant = "buttons" | "slider";
 
 export default function App() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [step, setStep] = useState<AppStep>("intro");
+  const [variant, setVariant] = useState<Variant>("buttons");
+  const [testMode, setTestMode] = useState(false);
+
+  // A/B test: Randomly assign variant on mount
+  useEffect(() => {
+    // Check URL parameter first for testing
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlVariant = urlParams.get('variant');
+    const urlTestMode = urlParams.get('test');
+    
+    // Enable test mode if ?test=true
+    if (urlTestMode === 'true') {
+      setTestMode(true);
+      console.log("🧪 TEST MODE ENABLED - Data will NOT be saved to database");
+    }
+    
+    let assignedVariant: Variant;
+    
+    if (urlVariant === 'slider' || urlVariant === 'buttons' || urlVariant === 'button') {
+      // Manual override via URL parameter (handle both 'button' and 'buttons')
+      assignedVariant = urlVariant === 'button' ? 'buttons' : urlVariant as Variant;
+      console.log("A/B Test - Manual variant from URL:", assignedVariant);
+    } else {
+      // Random assignment for actual users
+      assignedVariant = Math.random() < 0.5 ? "buttons" : "slider";
+      console.log("A/B Test - Randomly assigned variant:", assignedVariant);
+    }
+    
+    setVariant(assignedVariant);
+  }, []);
 
   // Set document title and meta tags
   useEffect(() => {
@@ -48,40 +82,58 @@ export default function App() {
   // Create session on mount
   useEffect(() => {
     const initSession = async () => {
+      if (testMode) {
+        // In test mode, generate a mock session ID but don't save to database
+        const mockSessionId = `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        setSessionId(mockSessionId);
+        console.log("🧪 Test mode: Mock session created (not saved):", mockSessionId);
+        return;
+      }
+      
       try {
-        const response = await createSession();
+        // Detect device information
+        const deviceInfo = detectDevice();
+        console.log("Device detected:", getDeviceSummary(deviceInfo));
+        
+        const response = await createSession(variant, deviceInfo);
         if (response.success) {
           setSessionId(response.sessionId);
-          console.log("Session created:", response.sessionId);
+          console.log("Session created:", response.sessionId, "Variant:", variant);
         }
       } catch (error) {
         console.error("Failed to create session:", error);
       }
-    };
+    }
 
-    initSession();
-  }, []);
+    if (variant) {
+      initSession();
+    }
+  }, [variant, testMode]);
 
   const handleIntroComplete = async () => {
-    if (sessionId) {
+    if (sessionId && !testMode) {
       try {
         await recordPageCompletion(sessionId, "intro");
         console.log("Intro page completed");
       } catch (error) {
         console.error("Failed to record intro completion:", error);
       }
+    } else if (testMode) {
+      console.log("🧪 Test mode: Skipped saving intro completion");
     }
     setStep("tutorial");
   };
 
   const handleTutorialComplete = async () => {
-    if (sessionId) {
+    if (sessionId && !testMode) {
       try {
         await recordPageCompletion(sessionId, "tutorial");
         console.log("Tutorial page completed");
       } catch (error) {
         console.error("Failed to record tutorial completion:", error);
       }
+    } else if (testMode) {
+      console.log("🧪 Test mode: Skipped saving tutorial completion");
     }
     setStep("dialTest");
   };
@@ -97,14 +149,24 @@ export default function App() {
     improvements: string;
     repeatIntent: string;
   }) => {
-    if (sessionId) {
+    if (sessionId && !testMode) {
       try {
         await saveFeedback(sessionId, answers);
         await recordPageCompletion(sessionId, "feedback");
         console.log("Feedback saved successfully");
+        console.log("=== Session Complete ===");
+        console.log(`Session ID: ${sessionId}`);
+        console.log(`Variant: ${variant}`);
+        console.log(`To retrieve this session's data, use: getSessionData("${sessionId}")`);
+        console.log(`To retrieve all sessions, use: getAllSessions()`);
       } catch (error) {
         console.error("Failed to save feedback:", error);
       }
+    } else if (testMode) {
+      console.log("🧪 Test mode: Skipped saving feedback");
+      console.log("=== Test Session Complete (not saved) ===");
+      console.log(`Mock Session ID: ${sessionId}`);
+      console.log(`Variant: ${variant}`);
     }
     setStep("complete");
   };
@@ -113,13 +175,18 @@ export default function App() {
     case "intro":
       return <DialTestIntro onContinue={handleIntroComplete} />;
     case "tutorial":
-      return <DialTestTutorial sessionId={sessionId} onComplete={handleTutorialComplete} />;
+      return variant === "buttons"
+        ? <DialTestTutorial sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} />
+        : <DialTestTutorialSlider sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} />;
     case "dialTest":
-      return <DialTestOption2 sessionId={sessionId} onComplete={handleDialTestComplete} />;
+      return variant === "buttons"
+        ? <DialTestOption2 sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} />
+        : <DialTestSlider sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} />;
     case "feedback":
       return (
         <FeedbackTypeform
           sessionId={sessionId}
+          variant={variant}
           onSubmit={handleFeedbackSubmit}
           onBack={() => setStep("dialTest")}
         />

@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 
 interface FeedbackTypeformProps {
   sessionId: string | null;
+  variant?: "buttons" | "slider";
   onSubmit: (answers: {
     easeOfUse: string;
     attentionDifficulty: string;
@@ -24,54 +25,11 @@ interface Question {
   required: boolean;
 }
 
-const QUESTIONS: Question[] = [
-  {
-    id: "easeOfUse",
-    question: "How easy was it to use the buttons?",
-    type: "single",
-    options: [
-      "Very easy",
-      "Somewhat easy",
-      "Neither easy nor difficult",
-      "Somewhat difficult",
-      "Very difficult",
-    ],
-    required: true,
-  },
-  {
-    id: "attentionDifficulty",
-    question: "Was it difficult to pay attention to the video while pressing the buttons?",
-    type: "single",
-    options: ["Not at all", "A little", "Somewhat", "A lot"],
-    required: true,
-  },
-  {
-    id: "expressiveness",
-    question: "Did this method let you show how you felt?",
-    type: "single",
-    options: ["Yes, definitely", "Yes, somewhat", "Not really", "Not at all"],
-    required: true,
-  },
-  {
-    id: "improvements",
-    question: "What could be improved about this experience?",
-    type: "text",
-    placeholder: "Share your thoughts...",
-    required: false,
-  },
-  {
-    id: "repeatIntent",
-    question: "Would you take another survey like this?",
-    type: "single",
-    options: ["Yes", "Maybe", "No"],
-    required: true,
-  },
-];
-
 const OPTION_KEYS = ["A", "B", "C", "D", "E"];
 
 export function FeedbackTypeform({
   sessionId,
+  variant = "buttons",
   onSubmit,
   onBack,
 }: FeedbackTypeformProps) {
@@ -80,6 +38,55 @@ export function FeedbackTypeform({
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
   const [isTransitioning, setIsTransitioning] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Generate questions based on variant
+  const QUESTIONS: Question[] = [
+    {
+      id: "easeOfUse",
+      question: variant === "slider"
+        ? "How easy was it to use the slider?"
+        : "How easy was it to use the buttons?",
+      type: "single",
+      options: [
+        "Very easy",
+        "Somewhat easy",
+        "Neither easy nor difficult",
+        "Somewhat difficult",
+        "Very difficult",
+      ],
+      required: true,
+    },
+    {
+      id: "attentionDifficulty",
+      question: variant === "slider"
+        ? "Was it difficult to pay attention to the video while using the slider?"
+        : "Was it difficult to pay attention to the video while pressing the buttons?",
+      type: "single",
+      options: ["Not at all", "A little", "Somewhat", "A lot"],
+      required: true,
+    },
+    {
+      id: "expressiveness",
+      question: "Did this method let you show how you felt?",
+      type: "single",
+      options: ["Yes, definitely", "Yes, somewhat", "Not really", "Not at all"],
+      required: true,
+    },
+    {
+      id: "improvements",
+      question: "What could be improved about this experience?",
+      type: "text",
+      placeholder: "Share your thoughts...",
+      required: false,
+    },
+    {
+      id: "repeatIntent",
+      question: "Would you take another survey like this?",
+      type: "single",
+      options: ["Yes", "Maybe", "No"],
+      required: true,
+    },
+  ];
 
   const currentQuestion = QUESTIONS[currentIndex];
   const progress = ((currentIndex + 1) / QUESTIONS.length) * 100;
