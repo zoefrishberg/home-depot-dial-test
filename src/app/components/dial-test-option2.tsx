@@ -12,9 +12,10 @@ interface DialTestOption2Props {
   sessionId: string | null;
   testMode?: boolean;
   onComplete?: () => void;
+  progress: number;
 }
 
-export function DialTestOption2({ sessionId, testMode = false, onComplete }: DialTestOption2Props) {
+export function DialTestOption2({ sessionId, testMode = false, onComplete, progress }: DialTestOption2Props) {
   const [intensity, setIntensity] = useState(0); // -100 to 100
   const [isPlaying, setIsPlaying] = useState(false);
   const [dataPoints, setDataPoints] = useState<DataPoint[]>([]);
@@ -32,7 +33,7 @@ export function DialTestOption2({ sessionId, testMode = false, onComplete }: Dia
   const activeButtonRef = useRef<"negative" | "positive" | null>(null);
   const [holdDuration, setHoldDuration] = useState(0);
 
-  const VIDEO_SRC = "https://vod-prod-02-source-u4t2w48mf8oc.s3.amazonaws.com/5ad7d3c623a9b5d7aec16c1c-38b5d74b0144255d9279ac39376df9de.mp4";
+  const VIDEO_SRC = "https://vod-prod-02-source-u4t2w48mf8oc.s3.amazonaws.com/66e9ada2497b6eaa620de6d6-96c9c123bc405c87dfe5f25019c1a876.mp4";
 
   // Keep intensityRef in sync with intensity state
   useEffect(() => {
@@ -264,9 +265,9 @@ export function DialTestOption2({ sessionId, testMode = false, onComplete }: Dia
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#E8E8E8] flex flex-col">
+    <div className="min-h-[100dvh] bg-black flex flex-col">
       {/* Header - More Compact */}
-      <header className="bg-[#3D3D3D] px-3 py-2 flex items-center justify-between flex-shrink-0">
+      <header className="bg-[#313131] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-30">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 border-2 border-white rounded flex items-center justify-center">
             <div className="w-2.5 h-2.5 bg-white" style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}></div>
@@ -284,185 +285,176 @@ export function DialTestOption2({ sessionId, testMode = false, onComplete }: Dia
         </div>
       </header>
 
-      {/* Main Content - Optimized spacing */}
-      <main className="flex-1 px-3 py-2 overflow-y-auto min-h-0">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-lg text-[#3D3D3D] mb-1">
-            Watch the video and share your reaction
-          </h1>
-          <p className="text-xs text-gray-600 mb-2">
-            ⏱ Press and hold a button to show how you feel.<br />
-            The longer you hold, the stronger your reaction.
-          </p>
+      {/* Full-Screen Video Container */}
+      <main className="flex-1 relative overflow-hidden">
+        {/* Video - Full Screen Background */}
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-cover"
+          src={VIDEO_SRC}
+          playsInline
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onEnded={handleEnded}
+          onLoadedMetadata={handleLoadedMetadata}
+          onTimeUpdate={handleTimeUpdate}
+          controls={false}
+        >
+          Your browser does not support the video tag.
+        </video>
 
-          {/* Video Player - More compact */}
-          <div className="bg-black rounded-lg overflow-hidden mb-2 shadow-lg relative">
-            <video
-              ref={videoRef}
-              className="w-full aspect-video"
-              src={VIDEO_SRC}
-              playsInline
-              onPlay={handlePlay}
-              onPause={handlePause}
-              onEnded={handleEnded}
-              onLoadedMetadata={handleLoadedMetadata}
-              onTimeUpdate={handleTimeUpdate}
-              controls={hasStartedPlaying}
+        {/* Pre-play overlay */}
+        {!hasStartedPlaying && (
+          <div
+            className="absolute inset-0 bg-black flex flex-col items-center justify-center cursor-pointer z-20"
+            onClick={handleStartVideo}
+          >
+            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-6 hover:bg-white/30 transition-colors">
+              <Play className="w-8 h-8 text-white ml-1" fill="white" />
+            </div>
+            <div className="flex items-center gap-2 text-white/80 text-sm">
+              <Volume2 className="w-5 h-5" />
+              <span>Turn your sound on before playing</span>
+            </div>
+          </div>
+        )}
+        
+        {/* Emotion Curve Overlay */}
+        <div className="absolute inset-0 pointer-events-none z-10">
+          {/* Bottom timeline curve */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent">
+            <svg 
+              viewBox="0 0 640 120" 
+              preserveAspectRatio="none"
+              className="w-full h-full"
             >
-              Your browser does not support the video tag.
-            </video>
+              {/* Neutral center line */}
+              <line 
+                x1="0" 
+                y1="60" 
+                x2="640" 
+                y2="60" 
+                stroke="rgba(255, 255, 255, 0.3)" 
+                strokeWidth="1"
+                strokeDasharray="4 4"
+              />
+              
+              {/* Emotion curve */}
+              {dataPoints.length > 0 && (
+                <path
+                  d={generateCurvePath()}
+                  fill="none"
+                  stroke={intensity > 0 ? "#22C55E" : intensity < 0 ? "#EF4444" : "#9CA3AF"}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.9"
+                />
+              )}
+              
+              {/* Current position indicator */}
+              {videoDuration > 0 && (
+                <line 
+                  x1={`${getCurrentPositionX()}%`}
+                  y1="0" 
+                  x2={`${getCurrentPositionX()}%`}
+                  y2="120" 
+                  stroke="rgba(91, 159, 237, 0.8)" 
+                  strokeWidth="2"
+                />
+              )}
+            </svg>
+          </div>
+        </div>
 
-            {/* Pre-play overlay */}
-            {!hasStartedPlaying && (
-              <div
-                className="absolute inset-0 bg-black flex flex-col items-center justify-center cursor-pointer z-20"
-                onClick={handleStartVideo}
-              >
-                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-6 hover:bg-white/30 transition-colors">
-                  <Play className="w-8 h-8 text-white ml-1" fill="white" />
-                </div>
-                <div className="flex items-center gap-2 text-white/80 text-sm">
-                  <Volume2 className="w-5 h-5" />
-                  <span>Turn your sound on before playing</span>
-                </div>
+        {/* Hold-to-Feel Buttons - Overlaid */}
+        <div className="absolute bottom-8 left-0 right-0 z-20 px-6">
+          <div className="max-w-md mx-auto">
+            {/* Recording Indicator */}
+            {isPlaying && (
+              <div className="flex items-center justify-center gap-2 text-sm text-white mb-3">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span>Recording your responses...</span>
               </div>
             )}
-            
-            {/* Emotion Curve Overlay */}
-            <div className="absolute inset-0 pointer-events-none">
-              {/* Bottom timeline curve */}
-              <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent">
-                <svg 
-                  viewBox="0 0 640 120" 
-                  preserveAspectRatio="none"
-                  className="w-full h-full"
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="flex flex-col">
+                {/* Horizontal LED intensity bars - above button */}
+                <div className="flex gap-1 mb-2 justify-center">
+                  {[1, 2, 3, 4, 5].map((level) => {
+                    // Each LED lights up at 1s intervals 
+                    const thresholdMs = level * 1000;
+                    const isActive = activeButton === "negative" && holdDuration >= thresholdMs;
+                    return (
+                      <div
+                        key={level}
+                        className={`w-4 h-2 rounded-[1px] transition-all duration-100 ${
+                          isActive ? 'bg-[#EB5547]' : 'bg-[#E8E8E8]'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+
+                <button
+                  onPointerDown={() => handleButtonPress("negative")}
+                  onPointerUp={handleButtonRelease}
+                  onPointerLeave={handleButtonRelease}
+                  onContextMenu={(e) => e.preventDefault()}
+                  style={{ 
+                    backgroundColor: 'rgba(235, 85, 71, 1)',
+                    WebkitUserSelect: 'none',
+                    WebkitTouchCallout: 'none',
+                    userSelect: 'none'
+                  }}
+                  className={`hover:opacity-90 active:opacity-100 border-2 border-[rgba(220,70,56,1)] rounded-lg p-4 flex flex-col items-center gap-2 transition-all select-none touch-none ${
+                    activeButton === "negative" ? "scale-95 shadow-inner" : "shadow-sm"
+                  }`}
                 >
-                  {/* Neutral center line */}
-                  <line 
-                    x1="0" 
-                    y1="60" 
-                    x2="640" 
-                    y2="60" 
-                    stroke="rgba(255, 255, 255, 0.3)" 
-                    strokeWidth="1"
-                    strokeDasharray="4 4"
-                  />
-                  
-                  {/* Emotion curve */}
-                  {dataPoints.length > 0 && (
-                    <path
-                      d={generateCurvePath()}
-                      fill="none"
-                      stroke={intensity > 0 ? "#22C55E" : intensity < 0 ? "#EF4444" : "#9CA3AF"}
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      opacity="0.9"
-                    />
-                  )}
-                  
-                  {/* Current position indicator */}
-                  {videoDuration > 0 && (
-                    <line 
-                      x1={`${getCurrentPositionX()}%`}
-                      y1="0" 
-                      x2={`${getCurrentPositionX()}%`}
-                      y2="120" 
-                      stroke="rgba(91, 159, 237, 0.8)" 
-                      strokeWidth="2"
-                    />
-                  )}
-                </svg>
+                  <X className="w-8 h-8 text-white" strokeWidth={2.5} />
+                  <span className="font-semibold text-white text-xs">LOSING ME</span>
+                </button>
+              </div>
+
+              <div className="flex flex-col">
+                {/* Horizontal LED intensity bars - above button */}
+                <div className="flex gap-1 mb-2 justify-center">
+                  {[1, 2, 3, 4, 5].map((level) => {
+                    // Each LED lights up at 1s intervals 
+                    const thresholdMs = level * 1000;
+                    const isActive = activeButton === "positive" && holdDuration >= thresholdMs;
+                    return (
+                      <div
+                        key={level}
+                        className={`w-4 h-2 rounded-[1px] transition-all duration-100 ${
+                          isActive ? 'bg-[#2CC352]' : 'bg-[#E8E8E8]'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+
+                <button
+                  onPointerDown={() => handleButtonPress("positive")}
+                  onPointerUp={handleButtonRelease}
+                  onPointerLeave={handleButtonRelease}
+                  onContextMenu={(e) => e.preventDefault()}
+                  style={{ 
+                    backgroundColor: 'rgba(44, 195, 82, 1)',
+                    WebkitUserSelect: 'none',
+                    WebkitTouchCallout: 'none',
+                    userSelect: 'none'
+                  }}
+                  className={`hover:opacity-90 active:opacity-100 border-2 border-[rgba(34,175,67,1)] rounded-lg p-4 flex flex-col items-center gap-2 transition-all select-none touch-none ${
+                    activeButton === "positive" ? "scale-95 shadow-inner" : "shadow-sm"
+                  }`}
+                >
+                  <Heart className="w-8 h-8 text-white" strokeWidth={2.5} />
+                  <span className="font-semibold text-white text-xs">INTO IT</span>
+                </button>
               </div>
             </div>
           </div>
-
-          {/* Hold-to-Feel Buttons */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="flex flex-col">
-              {/* Horizontal LED intensity bars - above button */}
-              <div className="flex gap-1 mb-2 justify-center">
-                {[1, 2, 3, 4, 5].map((level) => {
-                  // Each LED lights up at 1s intervals 
-                  const thresholdMs = level * 1000;
-                  const isActive = activeButton === "negative" && holdDuration >= thresholdMs;
-                  return (
-                    <div
-                      key={level}
-                      className={`w-4 h-2 rounded-[1px] transition-all duration-100 ${
-                        isActive ? 'bg-[#EB5547]' : 'bg-[#E8E8E8]'
-                      }`}
-                    />
-                  );
-                })}
-              </div>
-
-              <button
-                onPointerDown={() => handleButtonPress("negative")}
-                onPointerUp={handleButtonRelease}
-                onPointerLeave={handleButtonRelease}
-                onContextMenu={(e) => e.preventDefault()}
-                style={{ 
-                  backgroundColor: 'rgba(235, 85, 71, 1)',
-                  WebkitUserSelect: 'none',
-                  WebkitTouchCallout: 'none',
-                  userSelect: 'none'
-                }}
-                className={`hover:opacity-90 active:opacity-100 border-2 border-[rgba(220,70,56,1)] rounded-lg p-4 flex flex-col items-center gap-2 transition-all select-none touch-none ${
-                  activeButton === "negative" ? "scale-95 shadow-inner" : "shadow-sm"
-                }`}
-              >
-                <X className="w-8 h-8 text-white" strokeWidth={2.5} />
-                <span className="font-semibold text-white text-xs">LOSING ME</span>
-              </button>
-            </div>
-
-            <div className="flex flex-col">
-              {/* Horizontal LED intensity bars - above button */}
-              <div className="flex gap-1 mb-2 justify-center">
-                {[1, 2, 3, 4, 5].map((level) => {
-                  // Each LED lights up at 1s intervals 
-                  const thresholdMs = level * 1000;
-                  const isActive = activeButton === "positive" && holdDuration >= thresholdMs;
-                  return (
-                    <div
-                      key={level}
-                      className={`w-4 h-2 rounded-[1px] transition-all duration-100 ${
-                        isActive ? 'bg-[#2CC352]' : 'bg-[#E8E8E8]'
-                      }`}
-                    />
-                  );
-                })}
-              </div>
-
-              <button
-                onPointerDown={() => handleButtonPress("positive")}
-                onPointerUp={handleButtonRelease}
-                onPointerLeave={handleButtonRelease}
-                onContextMenu={(e) => e.preventDefault()}
-                style={{ 
-                  backgroundColor: 'rgba(44, 195, 82, 1)',
-                  WebkitUserSelect: 'none',
-                  WebkitTouchCallout: 'none',
-                  userSelect: 'none'
-                }}
-                className={`hover:opacity-90 active:opacity-100 border-2 border-[rgba(34,175,67,1)] rounded-lg p-4 flex flex-col items-center gap-2 transition-all select-none touch-none ${
-                  activeButton === "positive" ? "scale-95 shadow-inner" : "shadow-sm"
-                }`}
-              >
-                <Heart className="w-8 h-8 text-white" strokeWidth={2.5} />
-                <span className="font-semibold text-white text-xs">INTO IT</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Recording Indicator */}
-          {isPlaying && (
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-              <span>Recording your responses...</span>
-            </div>
-          )}
         </div>
       </main>
 

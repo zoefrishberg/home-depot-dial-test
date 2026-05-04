@@ -6,11 +6,12 @@ import { saveDialData } from "../../utils/api";
 interface TutorialProps {
   sessionId: string | null;
   onComplete: () => void;
+  testMode?: boolean;
   progress: number;
 }
 
-export function DialTestTutorialSlider({ sessionId, onComplete, progress }: TutorialProps) {
-  const [intensity, setIntensity] = useState(0); // -100 to 100
+export function DialTestTutorialSliderRatcheted({ sessionId, testMode = false, onComplete, progress }: TutorialProps) {
+  const [intensity, setIntensity] = useState(0); // -100 to 100, snapped to 10-point increments
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTouching, setIsTouching] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -94,9 +95,11 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
     const relativeY = Math.max(0, Math.min(1, y / rect.height));
     
     // Map: top (0) = +100, middle (0.5) = 0, bottom (1) = -100
-    // Remove rounding for smoother motion
-    const newIntensity = (0.5 - relativeY) * 200;
-    setIntensity(newIntensity);
+    const rawIntensity = (0.5 - relativeY) * 200;
+    
+    // Snap to nearest 10-point increment
+    const snappedIntensity = Math.round(rawIntensity / 10) * 10;
+    setIntensity(snappedIntensity);
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -180,53 +183,77 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
     } else if (currentTime < 12) {
       return {
         title: "Slide Down",
-        text: "Move your thumb down ⬇️ when you DISLIKE what you see"
+        text: "Move your thumb down ⬇️ when you DON'T like what you see"
       };
     } else if (currentTime < 16) {
       return {
-        title: "Middle = Neutral",
-        text: "Move to the middle when you feel neutral"
+        title: "Keep Moving",
+        text: "Change your position as your feelings change"
       };
     } else if (currentTime < 20) {
       return {
-        title: "Keep Holding!",
-        text: "Video will pause if you release the slider"
+        title: "Stay Engaged",
+        text: "The video pauses if you let go"
       };
     } else if (currentTime < tutorialDuration) {
       return {
-        title: "Practice!",
-        text: "Move the slider up and down as your feelings change"
+        title: "Almost Done!",
+        text: "Keep holding until the tutorial ends..."
       };
     } else {
       return {
-        title: "Next you'll see the actual video",
-        text: "Use the same slider to show how you feel."
+        title: "Perfect! 🎉",
+        text: "You're ready for the real thing"
       };
     }
   };
 
-  const instruction = getInstructionText();
-
-  // Save tutorial data when completed
   const handleContinue = async () => {
+    if (testMode) {
+      console.log("🧪 Test mode: Skipped saving tutorial data");
+      if (onComplete) {
+        onComplete();
+      }
+      return;
+    }
+
     if (sessionId && recordedDataPoints.length > 0) {
       try {
         await saveDialData(sessionId, 'tutorial', recordedDataPoints);
-        console.log(`Saved ${recordedDataPoints.length} tutorial data points`);
+        console.log(`Tutorial data saved: ${recordedDataPoints.length} points`);
       } catch (error) {
-        console.error("Failed to save tutorial data:", error);
+        console.error('Failed to save tutorial data:', error);
       }
     }
-    onComplete();
+    
+    if (onComplete) {
+      onComplete();
+    }
   };
 
-  // Calculate fader cap position (0-100%)
   const faderPosition = 50 - (intensity / 2); // Map -100..100 to 100%..0%
+  const instruction = getInstructionText();
+
+  // Generate tick marks for every 10 points
+  const tickMarks = [];
+  for (let i = -100; i <= 100; i += 10) {
+    const tickPosition = 50 - (i / 2); // Map value to percentage position
+    const isCenter = i === 0;
+    tickMarks.push(
+      <div
+        key={i}
+        className="absolute left-1/2 -translate-x-1/2"
+        style={{ top: `${tickPosition}%` }}
+      >
+        <div className={`h-[2px] ${isCenter ? 'w-4 bg-black/60' : 'w-3 bg-black/30'}`} />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-[100dvh] bg-black flex flex-col">
+    <div className="min-h-[100vh] bg-black flex flex-col">
       {/* Header - More Compact */}
-      <header className="bg-[#3D3D3D] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-20">
+      <header className="bg-[#3D3D3D] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-30">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 border-2 border-white rounded flex items-center justify-center">
             <div className="w-2.5 h-2.5 bg-white" style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}></div>
@@ -247,99 +274,19 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
         </div>
       </header>
 
-      {/* Full-Screen Video Container */}
-      <main className="flex-1 relative overflow-hidden">
-        {/* Video Background - Full Screen */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center">
-          <div className="text-center px-20 z-10 max-w-sm mx-auto">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              {instruction.title}
-            </h2>
-            <p className="text-xl text-white/90">
-              {instruction.text}
-            </p>
-            {instruction.subtitle && (
-              <p className="text-xl text-white/90 mt-2">
-                {instruction.subtitle}
-              </p>
-            )}
-          </div>
+      {/* Full-Screen Content */}
+      <main className="flex-1 relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800 flex flex-col items-center justify-center px-4">
+        {/* Instruction Box */}
+        <div className="text-center mb-8 max-w-sm mx-auto px-4 z-20">
+          <h2 className="text-2xl font-semibold text-white mb-2">{instruction.title}</h2>
+          <p className="text-lg text-gray-300 mb-1">{instruction.text}</p>
+          {instruction.subtitle && (
+            <p className="text-sm text-gray-400 mt-2">{instruction.subtitle}</p>
+          )}
         </div>
 
-        {/* Emotion Curve Overlay - Bottom timeline */}
-        {dataPoints.length > 0 && (
-          <div className="absolute inset-0 pointer-events-none z-10">
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent">
-              <svg 
-                viewBox="0 0 640 120" 
-                preserveAspectRatio="none"
-                className="w-full h-full"
-              >
-                {/* Neutral center line */}
-                <line 
-                  x1="0" 
-                  y1="60" 
-                  x2="640" 
-                  y2="60" 
-                  stroke="rgba(255, 255, 255, 0.3)" 
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
-                />
-                
-                {/* Emotion curve - left to right on timeline */}
-                {(() => {
-                  const width = 640;
-                  const height = 120;
-                  const midY = height / 2;
-                  
-                  let pathData = "";
-                  dataPoints.forEach((point, index) => {
-                    const x = (point.time / tutorialDuration) * width;
-                    const y = midY - (point.value / 100) * (midY - 10);
-                    
-                    if (index === 0) {
-                      pathData += `M ${x} ${y}`;
-                    } else if (index === 1) {
-                      pathData += ` L ${x} ${y}`;
-                    } else {
-                      const prevPoint = dataPoints[index - 1];
-                      const prevX = (prevPoint.time / tutorialDuration) * width;
-                      const prevY = midY - (prevPoint.value / 100) * (midY - 10);
-                      const controlX = (prevX + x) / 2;
-                      const controlY = prevY;
-                      pathData += ` Q ${controlX} ${controlY}, ${x} ${y}`;
-                    }
-                  });
-                  
-                  return (
-                    <path
-                      d={pathData}
-                      fill="none"
-                      stroke="#787896"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      opacity="0.9"
-                    />
-                  );
-                })()}
-                
-                {/* Current position indicator */}
-                <line 
-                  x1={`${(currentTime / tutorialDuration) * 100}%`}
-                  y1="0" 
-                  x2={`${(currentTime / tutorialDuration) * 100}%`}
-                  y2="120" 
-                  stroke="rgba(91, 159, 237, 0.8)" 
-                  strokeWidth="2"
-                />
-              </svg>
-            </div>
-          </div>
-        )}
-
-        {/* Vertical Slider Overlay - Dynamic Side with Toggle Button */}
-        <div className={`absolute ${sliderSide === 'right' ? 'right-8' : 'left-8'} top-1/2 -translate-y-1/2 z-20`}>
+        {/* Vertical Slider - Dynamic Side with Toggle Button */}
+        <div className={`fixed ${sliderSide === 'right' ? 'right-8' : 'left-8'} top-1/2 -translate-y-1/2 z-20`}>
           {/* Toggle Button - Below Slider - Mobile Only */}
           <button
             onClick={toggleSliderSide}
@@ -377,12 +324,12 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
                     >
                       <defs>
                         {/* Gradient for the stroke - fades from left to right */}
-                        <linearGradient id="ribbonLineGradientTutorial" x1="0" y1="0" x2="1" y2="0">
+                        <linearGradient id="ribbonLineGradient" x1="0" y1="0" x2="1" y2="0">
                           <stop offset="0%" stopColor={neutralCurveColor} stopOpacity="0.2" />
                           <stop offset="100%" stopColor={neutralCurveColor} stopOpacity="0.9" />
                         </linearGradient>
                         {/* Gradient for area fill - vertical gradient */}
-                        <linearGradient id="ribbonAreaGradientTutorial" x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id="ribbonAreaGradient" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor={neutralCurveColor} stopOpacity="0.25" />
                           <stop offset="100%" stopColor={neutralCurveColor} stopOpacity="0" />
                         </linearGradient>
@@ -403,7 +350,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
                       {curveData.areaD && (
                         <path
                           d={curveData.areaD}
-                          fill="url(#ribbonAreaGradientTutorial)"
+                          fill="url(#ribbonAreaGradient)"
                         />
                       )}
                       
@@ -412,7 +359,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
                         <path
                           d={curveData.pathD}
                           fill="none"
-                          stroke="url(#ribbonLineGradientTutorial)"
+                          stroke="url(#ribbonLineGradient)"
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -465,7 +412,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
               );
             })()}
 
-            {/* Slider Track with gradient background */}
+            {/* Slider Track with gradient background and tick marks */}
             <div 
               ref={sliderRef}
               onPointerDown={handlePointerDown}
@@ -480,13 +427,16 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
               {/* Center line */}
               <div className="absolute left-0 right-0 top-1/2 h-[2px] bg-white/50" />
               
+              {/* Tick marks */}
+              {tickMarks}
+              
               {/* Fader Cap */}
               <div 
-                className="absolute left-1/2 w-17 h-8 bg-[#5B9FED] rounded-lg shadow-xl border-2 border-gray-300 flex items-center justify-center"
+                className="absolute left-1/2 w-17 h-8 bg-[#5B9FED] rounded-lg shadow-xl border-2 border-gray-300 flex items-center justify-center transition-all duration-75"
                 style={{ 
                   top: `${faderPosition}%`,
                   transform: `translate(-50%, -50%) ${isTouching ? 'scale(1.1)' : 'scale(1)'}`,
-                  transition: isTouching ? 'none' : 'transform 0.15s ease-out'
+                  transition: isTouching ? 'top 75ms ease-out' : 'transform 0.15s ease-out, top 75ms ease-out'
                 }}
               >
                 {/* Grip lines */}
@@ -508,29 +458,18 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
             <Lock className="w-4 h-4" />
             <span>Your answer is private</span>
           </div>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1 bg-[#C8C8C8] hover:bg-[#B8B8B8] text-[#3D3D3D] border-0 h-12"
-              onClick={() => {
-                setIsPlaying(false);
-                setCurrentTime(0);
-                setDataPoints([]);
-                setHasStarted(false);
-                setIntensity(0);
-                setIsTouching(false);
-              }}
-            >
-              Restart
-            </Button>
-            <Button
-              onClick={handleContinue}
-              disabled={currentTime < tutorialDuration}
-              className="flex-1 bg-[#5B9FED] hover:bg-[#4A8EDC] text-white border-0 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Continue
-            </Button>
-          </div>
+          {currentTime < tutorialDuration && (
+            <p className="text-center text-sm text-gray-600 mb-3">
+              Complete the tutorial to continue
+            </p>
+          )}
+          <Button
+            onClick={handleContinue}
+            disabled={currentTime < tutorialDuration}
+            className="w-full bg-[#5B9FED] hover:bg-[#4A8EDC] text-white border-0 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Continue
+          </Button>
         </div>
       </footer>
     </div>

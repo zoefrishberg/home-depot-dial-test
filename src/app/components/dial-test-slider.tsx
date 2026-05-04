@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Gift, Lock, Volume2, Play } from "lucide-react";
+import { Gift, Volume2, Play, MoveHorizontal } from "lucide-react";
 import { saveDialData, recordPageCompletion } from "../../utils/api";
 
 interface DataPoint {
@@ -12,9 +12,10 @@ interface DialTestSliderProps {
   sessionId: string | null;
   testMode?: boolean;
   onComplete?: () => void;
+  progress: number;
 }
 
-export function DialTestSlider({ sessionId, testMode = false, onComplete }: DialTestSliderProps) {
+export function DialTestSlider({ sessionId, testMode = false, onComplete, progress }: DialTestSliderProps) {
   const [intensity, setIntensity] = useState(0); // -100 to 100
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTouching, setIsTouching] = useState(false);
@@ -24,18 +25,34 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete }: Dial
   const [hasEnded, setHasEnded] = useState(false);
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
   const [recordedDataPoints, setRecordedDataPoints] = useState<Array<{ timestamp: number; button: string | null; intensity: number }>>([]);
+  const [sliderSide, setSliderSide] = useState<'left' | 'right'>('right'); // Default to right
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const recordingInterval = useRef<NodeJS.Timeout | null>(null);
   const intensityRef = useRef(0);
 
-  const VIDEO_SRC = "https://vod-prod-02-source-u4t2w48mf8oc.s3.amazonaws.com/5ad7d3c623a9b5d7aec16c1c-38b5d74b0144255d9279ac39376df9de.mp4";
+  const VIDEO_SRC = "https://vod-prod-02-source-u4t2w48mf8oc.s3.amazonaws.com/66e9ada2497b6eaa620de6d6-96c9c123bc405c87dfe5f25019c1a876.mp4";
 
   // Keep intensityRef in sync with intensity state
   useEffect(() => {
     intensityRef.current = intensity;
   }, [intensity]);
+
+  // Load slider side preference from localStorage on mount
+  useEffect(() => {
+    const savedSide = localStorage.getItem('sliderSide');
+    if (savedSide === 'left' || savedSide === 'right') {
+      setSliderSide(savedSide);
+    }
+  }, []);
+
+  // Toggle slider side and save to localStorage
+  const toggleSliderSide = () => {
+    const newSide = sliderSide === 'right' ? 'left' : 'right';
+    setSliderSide(newSide);
+    localStorage.setItem('sliderSide', newSide);
+  };
 
   // Video event handlers
   const handlePause = () => setIsPlaying(false);
@@ -113,12 +130,15 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete }: Dial
   }, [isPlaying, isTouching]);
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isTouching || !sliderRef.current) return;
+    if (!sliderRef.current) return;
+
+    // Only update if we have pointer capture (actively dragging)
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
 
     const rect = sliderRef.current.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const relativeY = Math.max(0, Math.min(1, y / rect.height));
-    
+
     // Map: top (0) = +100, middle (0.5) = 0, bottom (1) = -100
     // Remove rounding for smoother motion
     const newIntensity = (0.5 - relativeY) * 200;
@@ -126,15 +146,21 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete }: Dial
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
     setIsTouching(true);
-    handlePointerMove(e);
+
+    // Update position immediately
+    if (sliderRef.current) {
+      const rect = sliderRef.current.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const relativeY = Math.max(0, Math.min(1, y / rect.height));
+      const newIntensity = (0.5 - relativeY) * 200;
+      setIntensity(newIntensity);
+    }
   };
 
-  const handlePointerUp = () => {
-    setIsTouching(false);
-  };
-
-  const handlePointerLeave = () => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.releasePointerCapture(e.pointerId);
     setIsTouching(false);
   };
 
@@ -217,13 +243,13 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete }: Dial
     }
   };
 
-  const progress = videoDuration > 0 ? (currentTime / videoDuration) * 100 : 0;
-  const faderPosition = 50 - (intensity / 2); // Map -100..100 to 100%..0%
+  // Map -100..100 to constrained range 7.8125%-92.1875% to align handle with slider edges
+  const faderPosition = 7.8125 + ((50 - (intensity / 2)) * 0.84375);
 
   return (
-    <div className="min-h-[100dvh] bg-[#E8E8E8] flex flex-col">
+    <div className="min-h-[100vh] bg-black flex flex-col">
       {/* Header - More Compact */}
-      <header className="bg-[#3D3D3D] px-3 py-2 flex items-center justify-between flex-shrink-0">
+      <header className="bg-[#313131] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-30">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 border-2 border-white rounded flex items-center justify-center">
             <div className="w-2.5 h-2.5 bg-white" style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}></div>
@@ -232,321 +258,378 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete }: Dial
         </div>
         <div className="flex items-center gap-2">
           <div className="w-16 h-1.5 bg-gray-600 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-[#5B9FED] transition-all duration-300" 
+            <div
+              className="h-full bg-[#5B9FED] transition-all duration-300"
               style={{ width: `${progress}%` }}
             ></div>
-          </div>
-          <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center">
-            <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
           </div>
           <Gift className="w-4 h-4 text-white" />
         </div>
       </header>
 
-      {/* Main Content - Optimized spacing */}
-      <main className="flex-1 px-3 py-2 overflow-y-auto min-h-0">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-lg text-[#3D3D3D] mb-1">
-            Watch the Video
-          </h1>
-          <p className="text-xs text-gray-600 mb-2">
-            ⏱ User the slider to show how you feel as you watch. Video plays only while you're holding the slider.
-          </p>
+      {/* Full-Screen Video Container */}
+      <main className="flex-1 relative overflow-hidden">
+        {/* Video - Full Screen Background */}
+        <video
+          ref={videoRef}
+          src={VIDEO_SRC}
+          onLoadedMetadata={handleLoadedMetadata}
+          onTimeUpdate={handleTimeUpdate}
+          onPause={handlePause}
+          onEnded={handleEnded}
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
 
-          {/* Video Player with Slider - More compact */}
-          <div className="bg-black rounded-lg overflow-hidden mb-2 shadow-lg">
-            {/* Adjusted aspect ratio for better mobile fit */}
-            <div className="w-full aspect-[4/3] bg-black relative">
-              {/* Video */}
-              <video
-                ref={videoRef}
-                src={VIDEO_SRC}
-                onLoadedMetadata={handleLoadedMetadata}
-                onTimeUpdate={handleTimeUpdate}
-                onPause={handlePause}
-                onEnded={handleEnded}
-                playsInline
-                className="w-full h-full object-contain"
+        {/* Emotion Curve Overlay on Video - Hidden, using new histogram card instead */}
+        <div className={`hidden absolute inset-0 pointer-events-none z-10 ${!hasStartedPlaying ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}>
+          {/* Bottom timeline curve */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent">
+            <svg 
+              viewBox="0 0 640 120" 
+              preserveAspectRatio="none"
+              className="w-full h-full"
+            >
+              {/* Neutral center line */}
+              <line 
+                x1="0" 
+                y1="60" 
+                x2="640" 
+                y2="60" 
+                stroke="rgba(255, 255, 255, 0.3)" 
+                strokeWidth="1"
+                strokeDasharray="4 4"
               />
-
-              {/* Play overlay when not started */}
-              {!hasStartedPlaying && !hasEnded && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-none">
-                  <div className="text-center text-white">
-                    <Play className="w-16 h-16 mx-auto mb-2" />
-                    <p className="text-lg font-medium">Touch slider to start</p>
-                  </div>
-                </div>
+              
+              {/* Emotion curve - left to right on video timeline */}
+              {dataPoints.length > 0 && (() => {
+                const width = 640;
+                const height = 120;
+                const midY = height / 2;
+                
+                let pathData = "";
+                dataPoints.forEach((point, index) => {
+                  const x = (point.timestamp / videoDuration) * width;
+                  const y = midY - (point.value / 100) * (midY - 10);
+                  
+                  if (index === 0) {
+                    pathData += `M ${x} ${y}`;
+                  } else if (index === 1) {
+                    pathData += ` L ${x} ${y}`;
+                  } else {
+                    const prevPoint = dataPoints[index - 1];
+                    const prevX = (prevPoint.timestamp / videoDuration) * width;
+                    const prevY = midY - (prevPoint.value / 100) * (midY - 10);
+                    const controlX = (prevX + x) / 2;
+                    const controlY = prevY;
+                    pathData += ` Q ${controlX} ${controlY}, ${x} ${y}`;
+                  }
+                });
+                
+                return (
+                  <path
+                    d={pathData}
+                    fill="none"
+                    stroke="#787896"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.9"
+                  />
+                );
+              })()}
+              
+              {/* Current position indicator */}
+              {videoDuration > 0 && (
+                <line 
+                  x1={`${(currentTime / videoDuration) * 100}%`}
+                  y1="0" 
+                  x2={`${(currentTime / videoDuration) * 100}%`}
+                  y2="120" 
+                  stroke="rgba(91, 159, 237, 0.8)" 
+                  strokeWidth="2"
+                />
               )}
+            </svg>
+          </div>
+        </div>
 
-              {/* Emotion Curve Overlay on Video */}
-              {hasStartedPlaying && (
-                <div className="absolute inset-0 pointer-events-none">
-                  {/* Bottom timeline curve */}
-                  <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent">
+
+        {/* New Histogram Card - Full width at bottom */}
+        <div
+          className={`fixed left-0 right-0 z-10 transition-all duration-300 ease-in-out ${
+            isTouching && !hasEnded ? 'bottom-0' : 'bottom-16'
+          }`}
+        >
+          <div className="bg-[rgba(0,0,0,0.4)] h-42 landscape:h-26 px-3 landscape:px-16 py-1 relative">
+            {/* Horizontal center line */}
+            <div className="absolute left-2 right-2 landscape:left-16 landscape:right-16 top-1/2 h-[1px] bg-[#E0E0E0] opacity-20" />
+
+            {/* ECG Curve */}
+            <svg
+              viewBox="0 0 297 50"
+              preserveAspectRatio="none"
+              className="w-full h-full"
+              style={{ shapeRendering: 'geometricPrecision' }}
+            >
+              <defs>
+                {/* Gradient for histogram curve - absolute positioning based on value range */}
+                <linearGradient id="histogramGradient" x1="0" y1="5" x2="0" y2="45" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#2CC353" />
+                  <stop offset="50%" stopColor="#FFFFFF" />
+                  <stop offset="100%" stopColor="#EB5547" />
+                </linearGradient>
+              </defs>
+
+              {/* Emotion curve - timeline based */}
+              {dataPoints.length > 0 && (() => {
+                const width = 297;
+                const height = 50;
+                const midY = height / 2;
+
+                let pathData = "";
+                dataPoints.forEach((point, index) => {
+                  const x = (point.timestamp / videoDuration) * width;
+                  const y = midY - (point.value / 100) * (midY - 5);
+
+                  if (index === 0) {
+                    pathData += `M ${x} ${y}`;
+                  } else if (index === 1) {
+                    pathData += ` L ${x} ${y}`;
+                  } else {
+                    const prevPoint = dataPoints[index - 1];
+                    const prevX = (prevPoint.timestamp / videoDuration) * width;
+                    const prevY = midY - (prevPoint.value / 100) * (midY - 5);
+                    const controlX = (prevX + x) / 2;
+                    const controlY = prevY;
+                    pathData += ` Q ${controlX} ${controlY}, ${x} ${y}`;
+                  }
+                });
+
+                return (
+                  <path
+                    d={pathData}
+                    fill="none"
+                    stroke="url(#histogramGradient)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.9"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                );
+              })()}
+            </svg>
+          </div>
+        </div>
+
+        {/* Vertical Slider Overlay - Dynamic Side with Toggle Button */}
+        <div className={`fixed ${sliderSide === 'right' ? 'right-4' : 'left-4'} bottom-32 landscape:bottom-4 z-20 flex flex-col items-center gap-4`}>
+          <div
+            className="relative h-64 max-h-[calc(100vh-180px)] landscape:max-h-[calc(100vh-140px)] flex items-center select-none"
+            style={{
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none',
+              userSelect: 'none'
+            }}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            {/* Trailing ECG-style curve */}
+            {(() => {
+              const curveData = generateCurvePath();
+              const trackH = 256; // h-64 = 256px
+              const lastPoint = curveData.points.length > 0 ? curveData.points[curveData.points.length - 1] : null;
+              const neutralCurveColor = "#787896"; // Neutral gray-purple color
+
+              return (
+                <>
+                  {/* Curve SVG - positioned opposite to slider */}
+                  <div className={`absolute ${sliderSide === 'right' ? 'right-full mr-2' : 'left-full ml-2'} top-0 bottom-0 w-48 pointer-events-none overflow-visible`}>
                     <svg 
-                      viewBox="0 0 640 120" 
+                      viewBox="0 0 200 192" 
                       preserveAspectRatio="none"
                       className="w-full h-full"
+                      style={{ overflow: 'visible' }}
                     >
-                      {/* Neutral center line */}
+                      <defs>
+                        {/* Gradient for the stroke - fades from left to right */}
+                        <linearGradient id="ribbonLineGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor={neutralCurveColor} stopOpacity="0.2" />
+                          <stop offset="100%" stopColor={neutralCurveColor} stopOpacity="0.9" />
+                        </linearGradient>
+                        {/* Gradient for area fill - vertical gradient */}
+                        <linearGradient id="ribbonAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={neutralCurveColor} stopOpacity="0.25" />
+                          <stop offset="100%" stopColor={neutralCurveColor} stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      
+                      {/* Neutral center line - dotted horizontal */}
                       <line 
                         x1="0" 
-                        y1="60" 
-                        x2="640" 
-                        y2="60" 
-                        stroke="rgba(255, 255, 255, 0.3)" 
-                        strokeWidth="1"
+                        y1="96" 
+                        x2="200" 
+                        y2="96" 
+                        stroke="rgba(0, 0, 0, 0.15)" 
+                        strokeWidth="1.5"
                         strokeDasharray="4 4"
                       />
                       
-                      {/* Emotion curve - left to right on video timeline */}
-                      {dataPoints.length > 0 && (() => {
-                        const width = 640;
-                        const height = 120;
-                        const midY = height / 2;
-                        
-                        let pathData = "";
-                        dataPoints.forEach((point, index) => {
-                          const x = (point.timestamp / videoDuration) * width;
-                          const y = midY - (point.value / 100) * (midY - 10);
-                          
-                          if (index === 0) {
-                            pathData += `M ${x} ${y}`;
-                          } else if (index === 1) {
-                            pathData += ` L ${x} ${y}`;
-                          } else {
-                            const prevPoint = dataPoints[index - 1];
-                            const prevX = (prevPoint.timestamp / videoDuration) * width;
-                            const prevY = midY - (prevPoint.value / 100) * (midY - 10);
-                            const controlX = (prevX + x) / 2;
-                            const controlY = prevY;
-                            pathData += ` Q ${controlX} ${controlY}, ${x} ${y}`;
-                          }
-                        });
-                        
-                        return (
-                          <path
-                            d={pathData}
-                            fill="none"
-                            stroke="#787896"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            opacity="0.9"
-                          />
-                        );
-                      })()}
-                      
-                      {/* Current position indicator */}
-                      {videoDuration > 0 && (
-                        <line 
-                          x1={`${(currentTime / videoDuration) * 100}%`}
-                          y1="0" 
-                          x2={`${(currentTime / videoDuration) * 100}%`}
-                          y2="120" 
-                          stroke="rgba(91, 159, 237, 0.8)" 
-                          strokeWidth="2"
+                      {/* Area fill under curve */}
+                      {curveData.areaD && (
+                        <path
+                          d={curveData.areaD}
+                          fill="url(#ribbonAreaGradient)"
                         />
+                      )}
+                      
+                      {/* Main curve line */}
+                      {curveData.pathD && (
+                        <path
+                          d={curveData.pathD}
+                          fill="none"
+                          stroke="url(#ribbonLineGradient)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      )}
+                      
+                      {/* Glow circles at the end point */}
+                      {lastPoint && (
+                        <>
+                          <circle 
+                            cx={lastPoint.x} 
+                            cy={lastPoint.y} 
+                            r="4" 
+                            fill={neutralCurveColor} 
+                            opacity="0.7" 
+                          />
+                          <circle 
+                            cx={lastPoint.x} 
+                            cy={lastPoint.y} 
+                            r="8" 
+                            fill={neutralCurveColor} 
+                            opacity="0.15" 
+                          />
+                        </>
                       )}
                     </svg>
                   </div>
-                </div>
-              )}
-            </div>
 
-            {/* Vertical Slider below the video - centered and thinner */}
-            <div className="flex justify-center py-6 px-4 bg-[#E8E8E8]">
-              <div 
-                className="relative h-48 flex items-center select-none"
-                style={{
-                  WebkitUserSelect: 'none',
-                  WebkitTouchCallout: 'none',
-                  userSelect: 'none'
-                }}
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                {/* Trailing ECG-style curve to the left of slider */}
-                {(() => {
-                  const curveData = generateCurvePath();
-                  const trackH = 192; // h-48 = 192px
-                  const lastPoint = curveData.points.length > 0 ? curveData.points[curveData.points.length - 1] : null;
-                  const neutralCurveColor = "#787896"; // Neutral gray-purple color
-                  
-                  return (
-                    <>
-                      {/* Curve SVG */}
-                      <div className="absolute right-full top-0 bottom-0 w-48 pointer-events-none mr-2 overflow-visible">
-                        <svg 
-                          viewBox="0 0 200 192" 
-                          preserveAspectRatio="none"
-                          className="w-full h-full"
-                          style={{ overflow: 'visible' }}
-                        >
-                          <defs>
-                            {/* Gradient for the stroke - fades from left to right */}
-                            <linearGradient id="ribbonLineGradient" x1="0" y1="0" x2="1" y2="0">
-                              <stop offset="0%" stopColor={neutralCurveColor} stopOpacity="0.2" />
-                              <stop offset="100%" stopColor={neutralCurveColor} stopOpacity="0.9" />
-                            </linearGradient>
-                            {/* Gradient for area fill - vertical gradient */}
-                            <linearGradient id="ribbonAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor={neutralCurveColor} stopOpacity="0.25" />
-                              <stop offset="100%" stopColor={neutralCurveColor} stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
-                          
-                          {/* Neutral center line - dotted horizontal */}
-                          <line 
-                            x1="0" 
-                            y1="96" 
-                            x2="200" 
-                            y2="96" 
-                            stroke="rgba(0, 0, 0, 0.15)" 
-                            strokeWidth="1.5"
-                            strokeDasharray="4 4"
-                          />
-                          
-                          {/* Area fill under curve */}
-                          {curveData.areaD && (
-                            <path
-                              d={curveData.areaD}
-                              fill="url(#ribbonAreaGradient)"
-                            />
-                          )}
-                          
-                          {/* Main curve line */}
-                          {curveData.pathD && (
-                            <path
-                              d={curveData.pathD}
-                              fill="none"
-                              stroke="url(#ribbonLineGradient)"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          )}
-                          
-                          {/* Glow circles at the end point */}
-                          {lastPoint && (
-                            <>
-                              <circle 
-                                cx={lastPoint.x} 
-                                cy={lastPoint.y} 
-                                r="4" 
-                                fill={neutralCurveColor} 
-                                opacity="0.7" 
-                              />
-                              <circle 
-                                cx={lastPoint.x} 
-                                cy={lastPoint.y} 
-                                r="8" 
-                                fill={neutralCurveColor} 
-                                opacity="0.15" 
-                              />
-                            </>
-                          )}
-                        </svg>
-                      </div>
+                  {/* Connecting dashed line from curve end to fader */}
+                  {lastPoint && isTouching && (
+                    <svg 
+                      className="absolute right-full top-0 w-48 pointer-events-none mr-2"
+                      style={{ height: `${trackH}px` }}
+                      viewBox="0 0 200 192"
+                      preserveAspectRatio="none"
+                    >
+                      <line
+                        x1={lastPoint.x}
+                        y1={lastPoint.y}
+                        x2="200"
+                        y2={96 - (intensity / 100) * (96 - 20)}
+                        stroke={neutralCurveColor}
+                        strokeWidth="1.5"
+                        strokeOpacity="0.25"
+                        strokeDasharray="3 2"
+                      />
+                    </svg>
+                  )}
+                </>
+              );
+            })()}
 
-                      {/* Connecting dashed line from curve end to fader */}
-                      {lastPoint && isTouching && (
-                        <svg 
-                          className="absolute right-full top-0 w-48 pointer-events-none mr-2"
-                          style={{ height: `${trackH}px` }}
-                          viewBox="0 0 200 192"
-                          preserveAspectRatio="none"
-                        >
-                          <line
-                            x1={lastPoint.x}
-                            y1={lastPoint.y}
-                            x2="200"
-                            y2={96 - (intensity / 100) * (96 - 20)}
-                            stroke={neutralCurveColor}
-                            strokeWidth="1.5"
-                            strokeOpacity="0.25"
-                            strokeDasharray="3 2"
-                          />
-                        </svg>
-                      )}
-                    </>
-                  );
-                })()}
+            {/* Slider Track with gradient background */}
+            <div
+              ref={sliderRef}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              className="relative w-8 h-full rounded-full cursor-pointer touch-none z-10 shadow-[0px_4px_8px_0px_rgba(0,0,0,0.16)] border border-white"
+              style={{
+                background: 'linear-gradient(180deg, #2CC353 0%, #FFFFFF 50%, #EB5547 100%)'
+              }}
+            >
 
-                {/* Slider Track with gradient background */}
-                <div 
-                  ref={sliderRef}
-                  onPointerDown={handlePointerDown}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={handlePointerUp}
-                  onPointerLeave={handlePointerLeave}
-                  className="relative w-7 h-full rounded-full cursor-pointer touch-none z-10"
+              {/* Tooltip - appears when not touching and video hasn't ended */}
+              {!isTouching && !hasEnded && (
+                <div
+                  className={`absolute top-0 ${
+                    sliderSide === 'right' ? 'right-full mr-6' : 'left-full ml-6'
+                  } pointer-events-none animate-pulse`}
                   style={{
-                    background: 'linear-gradient(to bottom, #29A347 0%, #E8E8E8 50%, #B8392E 100%)'
+                    top: `${faderPosition}%`,
+                    transform: 'translateY(-50%)',
                   }}
                 >
-                  {/* Center line */}
-                  <div className="absolute left-0 right-0 top-1/2 h-[2px] bg-white/50" />
-                  
-                  {/* Fader Cap */}
-                  <div 
-                    className="absolute left-1/2 w-17 h-8 bg-[#5B9FED] rounded-lg shadow-xl border-2 border-gray-300 flex items-center justify-center"
-                    style={{ 
-                      top: `${faderPosition}%`,
-                      transform: `translate(-50%, -50%) ${isTouching ? 'scale(1.1)' : 'scale(1)'}`,
-                      transition: isTouching ? 'none' : 'transform 0.15s ease-out'
-                    }}
-                  >
-                    {/* Grip lines */}
-                    <div className="flex gap-1">
-                      <div className="w-0.5 h-4 bg-white rounded" />
-                      <div className="w-0.5 h-4 bg-white rounded" />
-                      <div className="w-0.5 h-4 bg-white rounded" />
-                    </div>
+                  <div className="bg-white px-4 py-2 rounded-lg shadow-md border border-gray-200 whitespace-nowrap relative">
+                    <p className="text-sm text-black font-medium">
+                      {!hasStartedPlaying ? 'Touch the slider to begin.' : 'Touch the slider to continue.'}
+                    </p>
+                    {/* Triangle pointer */}
+                    <div
+                      className={`absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-white border-gray-200 ${
+                        sliderSide === 'right'
+                          ? 'right-[-4px] border-r border-b rotate-[-45deg]'
+                          : 'left-[-4px] border-l border-t rotate-[-45deg]'
+                      }`}
+                    />
                   </div>
+                </div>
+              )}
+
+              {/* Fader Handle - White Rectangle */}
+              <div
+                className="absolute left-1/2 w-14 h-9 bg-white rounded-lg shadow-[0px_2px_4px_0px_rgba(0,0,0,0.16)] border border-[rgba(0,0,0,0.16)] flex items-center justify-center will-change-transform transition-transform duration-200 ease-out"
+                style={{
+                  top: `${faderPosition}%`,
+                  transform: `translate(-50%, -50%) scale(${isTouching ? 1.1 : 1})`,
+                }}
+              >
+                {/* Two horizontal grip lines */}
+                <div className="flex flex-col gap-1">
+                  <div className="w-4 h-0.5 bg-gray-300 rounded-full" />
+                  <div className="w-4 h-0.5 bg-gray-300 rounded-full" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Status Indicator */}
-          <div className="text-center mb-3">
-            {isTouching && !hasEnded ? (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                Video Playing
-              </div>
-            ) : hasEnded ? (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                Video Complete ✓
-              </div>
-            ) : (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-600 rounded-full text-sm font-medium">
-                <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                Touch slider to play
-              </div>
-            )}
-          </div>
+          {/* Toggle Button - Below Slider */}
+          <button
+            onClick={toggleSliderSide}
+            className="bg-white hover:bg-gray-50 rounded-full p-2.5 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.16)] transition-all pointer-events-auto"
+            title={`Switch to ${sliderSide === 'right' ? 'left' : 'right'} hand`}
+          >
+            <MoveHorizontal className="w-4 h-4 text-gray-600" />
+          </button>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-[#E8E8E8] px-4 py-4 border-t border-gray-300">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-center gap-2 mb-3 text-gray-500 text-sm">
-            <Lock className="w-4 h-4" />
-            <span>Your answer is private</span>
-          </div>
-          {!hasEnded && hasStartedPlaying && (
-            <p className="text-center text-sm text-gray-600 mb-3">
-              Please watch the entire video to continue
-            </p>
-          )}
+      {/* Footer - slides in/out based on touch state */}
+      <footer
+        className={`bg-[#E0E0E0] px-4 py-3 border-t border-[rgba(0,0,0,0.08)] fixed bottom-0 left-0 right-0 transition-transform duration-300 ease-in-out ${
+          isTouching && !hasEnded ? 'translate-y-full' : 'translate-y-0'
+        }`}
+      >
+        <div className="max-w-2xl mx-auto flex gap-3">
+          <Button
+            onClick={() => window.history.back()}
+            className="h-10 px-3 bg-[rgba(0,0,0,0.08)] hover:bg-[rgba(0,0,0,0.12)] text-[rgba(0,0,0,0.8)] border-0 rounded-xl font-medium text-sm"
+          >
+            Back
+          </Button>
           <Button
             onClick={handleContinue}
             disabled={!hasEnded}
-            className="w-full bg-[#5B9FED] hover:bg-[#4A8EDC] text-white border-0 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`flex-1 h-10 border-0 rounded-xl font-medium text-sm transition-colors ${
+              hasEnded
+                ? 'bg-[#5B9FED] hover:bg-[#4A8EDC] text-white cursor-pointer'
+                : 'bg-[rgba(0,0,0,0.4)] text-white cursor-not-allowed opacity-50'
+            }`}
           >
             Continue
           </Button>

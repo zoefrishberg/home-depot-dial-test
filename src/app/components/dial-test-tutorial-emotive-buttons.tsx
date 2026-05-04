@@ -7,6 +7,7 @@ interface TutorialProps {
   sessionId: string | null;
   onComplete: () => void;
   testMode?: boolean;
+  progress: number;
 }
 
 interface ReactionBurst {
@@ -16,7 +17,7 @@ interface ReactionBurst {
   emoji: string;
 }
 
-export function DialTestTutorialEmotiveButtons({ sessionId, testMode = false, onComplete }: TutorialProps) {
+export function DialTestTutorialEmotiveButtons({ sessionId, testMode = false, onComplete, progress }: TutorialProps) {
   const [intensity, setIntensity] = useState(0); // -100 to 100
   const [activeButton, setActiveButton] = useState<"nope" | "love" | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -28,9 +29,10 @@ export function DialTestTutorialEmotiveButtons({ sessionId, testMode = false, on
   
   const intensityInterval = useRef<NodeJS.Timeout | null>(null);
   const videoInterval = useRef<NodeJS.Timeout | null>(null);
+  const footerRef = useRef<HTMLElement>(null);
+  const burstIdCounter = useRef(0);
   const tutorialDuration = 24; // 24 second tutorial
   const [holdDuration, setHoldDuration] = useState(0);
-  const burstIdCounter = useRef(0);
 
   // Handle intensity changes (increase while holding, decay when not)
   useEffect(() => {
@@ -99,6 +101,13 @@ export function DialTestTutorialEmotiveButtons({ sessionId, testMode = false, on
       }]);
     }
   }, [currentTime, intensity, isPlaying, activeButton]);
+
+  // Scroll to footer when tutorial ends
+  useEffect(() => {
+    if (currentTime >= tutorialDuration && footerRef.current) {
+      footerRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [currentTime]);
 
   const createReactionBurst = (type: "nope" | "love") => {
     const emoji = type === "nope" ? "👎" : "❤️";
@@ -228,7 +237,6 @@ export function DialTestTutorialEmotiveButtons({ sessionId, testMode = false, on
   };
 
   const instruction = getInstructionText();
-  const progress = ((currentTime / tutorialDuration) * 100);
 
   // Save tutorial data when completed
   const handleContinue = async () => {
@@ -263,9 +271,9 @@ export function DialTestTutorialEmotiveButtons({ sessionId, testMode = false, on
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#E8E8E8] flex flex-col">
+    <div className="min-h-[100dvh] bg-black flex flex-col">
       {/* Header - More Compact */}
-      <header className="bg-[#3D3D3D] px-3 py-2 flex items-center justify-between flex-shrink-0">
+      <header className="bg-[#3D3D3D] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-20">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 border-2 border-white rounded flex items-center justify-center">
             <div className="w-2.5 h-2.5 bg-white" style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}></div>
@@ -286,109 +294,93 @@ export function DialTestTutorialEmotiveButtons({ sessionId, testMode = false, on
         </div>
       </header>
 
-      {/* Main Content - Optimized spacing */}
-      <main className="flex-1 px-3 py-2 overflow-y-auto min-h-0">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-lg text-[#3D3D3D] mb-1">
-            Tutorial
-          </h1>
-          <p className="text-xs text-gray-600 mb-2">
-            ⏱ Press and hold a button to show how you feel as you watch.<br />
-            Watch for reaction emojis that float up!
-          </p>
+      {/* Main Content */}
+      <main className="flex-1 relative overflow-hidden">
+        {/* Full-Screen Video Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center">
+          <div className="text-center px-8 z-10">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              {instruction.title}
+            </h2>
+            <p className="text-xl text-white/90">
+              {instruction.text}
+            </p>
+          </div>
+        </div>
 
-          {/* Video Player with Instructions */}
-          <div className="bg-black rounded-lg overflow-hidden mb-4 shadow-lg relative">
-            {/* Full square (1:1) container like real video */}
-            <div className="w-full aspect-square bg-black relative">
-              {/* 4:3 Tutorial content with letterboxing */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-full aspect-[4/3] bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-start pt-16 justify-center relative">
-                  <div className="text-center px-8 z-10">
-                    <h2 className="text-3xl font-bold text-white mb-4">
-                      {instruction.title}
-                    </h2>
-                    <p className="text-xl text-white/90">
-                      {instruction.text}
-                    </p>
-                  </div>
-                </div>
-              </div>
+        {/* Emotion Curve Overlay */}
+        <div className="absolute inset-0 pointer-events-none z-10">
+          {/* Bottom timeline curve */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent">
+            <svg 
+              viewBox="0 0 640 120" 
+              preserveAspectRatio="none"
+              className="w-full h-full"
+            >
+              {/* Neutral center line */}
+              <line 
+                x1="0" 
+                y1="60" 
+                x2="640" 
+                y2="60" 
+                stroke="rgba(255, 255, 255, 0.3)" 
+                strokeWidth="1"
+                strokeDasharray="4 4"
+              />
+              
+              {/* Emotion curve */}
+              {dataPoints.length > 0 && (
+                <path
+                  d={generateCurvePath()}
+                  fill="none"
+                  stroke={intensity > 0 ? "#DD493C" : intensity < 0 ? "#F4D125" : "#9CA3AF"}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.9"
+                />
+              )}
+              
+              {/* Current position indicator */}
+              {isPlaying && (
+                <line 
+                  x1={`${getCurrentPositionX()}%`}
+                  y1="0" 
+                  x2={`${getCurrentPositionX()}%`}
+                  y2="120" 
+                  stroke="rgba(91, 159, 237, 0.8)" 
+                  strokeWidth="2"
+                />
+              )}
+            </svg>
+          </div>
+        </div>
 
-              {/* Emotion Curve Overlay */}
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Bottom timeline curve */}
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent">
-                  <svg 
-                    viewBox="0 0 640 120" 
-                    preserveAspectRatio="none"
-                    className="w-full h-full"
-                  >
-                    {/* Neutral center line */}
-                    <line 
-                      x1="0" 
-                      y1="60" 
-                      x2="640" 
-                      y2="60" 
-                      stroke="rgba(255, 255, 255, 0.3)" 
-                      strokeWidth="1"
-                      strokeDasharray="4 4"
-                    />
-                    
-                    {/* Emotion curve */}
-                    {dataPoints.length > 0 && (
-                      <path
-                        d={generateCurvePath()}
-                        fill="none"
-                        stroke={intensity > 0 ? "#DD493C" : intensity < 0 ? "#F4D125" : "#9CA3AF"}
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        opacity="0.9"
-                      />
-                    )}
-                    
-                    {/* Current position indicator */}
-                    {isPlaying && (
-                      <line 
-                        x1={`${getCurrentPositionX()}%`}
-                        y1="0" 
-                        x2={`${getCurrentPositionX()}%`}
-                        y2="120" 
-                        stroke="rgba(91, 159, 237, 0.8)" 
-                        strokeWidth="2"
-                      />
-                    )}
-                  </svg>
-                </div>
-              </div>
+        {/* Reaction Burst Container - Covers video */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-15">
+          {reactionBursts.map((burst) => (
+            <div
+              key={burst.id}
+              className="absolute"
+              style={{
+                left: `${burst.x}%`,
+                bottom: '160px',
+                animation: `floatUp 3s ease-out forwards`,
+              }}
+            >
+              <span className="opacity-0" style={{
+                fontSize: '1.8rem',
+                animation: `fadeInOut 3s ease-out forwards`
+              }}>
+                {burst.emoji}
+              </span>
             </div>
-          </div>
+          ))}
+        </div>
 
-          {/* Reaction Burst Container - Covers video and buttons */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
-            {reactionBursts.map((burst) => (
-              <div
-                key={burst.id}
-                className="absolute"
-                style={{
-                  left: `${burst.x}%`,
-                  bottom: '20px',
-                  animation: `floatUp 3s ease-out forwards`,
-                }}
-              >
-                <span className="opacity-0" style={{
-                  fontSize: '1.8rem',
-                  animation: `fadeInOut 3s ease-out forwards`
-                }}>
-                  {burst.emoji}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Circular Buttons - Below Video */}
-          <div className="relative flex items-center justify-between px-4 mb-4">
+        {/* Circular Buttons Overlay - Bottom */}
+        <div className="absolute bottom-8 left-0 right-0 z-20 px-8">
+          <div className="max-w-md mx-auto flex items-center justify-between">
             {/* NOPE Button - Far Left */}
             <button
               onPointerDown={() => handleButtonPress("nope")}
@@ -400,10 +392,10 @@ export function DialTestTutorialEmotiveButtons({ sessionId, testMode = false, on
                 WebkitTouchCallout: 'none',
                 userSelect: 'none'
               }}
-              className={`w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center gap-1 transition-all select-none touch-none ${
+              className={`w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center gap-1 transition-all select-none touch-none shadow-lg ${
                 activeButton === "nope"
                   ? "bg-[#F4D125]/20 border-[#F4D125] scale-95"
-                  : "bg-white border-[#F4D125] hover:scale-105 active:scale-95 shadow-lg"
+                  : "bg-white border-[#F4D125] hover:scale-105 active:scale-95"
               }`}
             >
               <ThumbsDown className={`w-12 h-12 text-[#F4D125]`} strokeWidth={2.5} />
@@ -421,10 +413,10 @@ export function DialTestTutorialEmotiveButtons({ sessionId, testMode = false, on
                 WebkitTouchCallout: 'none',
                 userSelect: 'none'
               }}
-              className={`w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center gap-1 transition-all select-none touch-none ${
+              className={`w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center gap-1 transition-all select-none touch-none shadow-lg ${
                 activeButton === "love"
                   ? "bg-[#DD493C]/20 border-[#DD493C] scale-95"
-                  : "bg-white border-[#DD493C] hover:scale-105 active:scale-95 shadow-lg"
+                  : "bg-white border-[#DD493C] hover:scale-105 active:scale-95"
               }`}
             >
               <Heart className={`w-12 h-12 text-[#DD493C]`} strokeWidth={2.5} fill="currentColor" />
@@ -435,7 +427,7 @@ export function DialTestTutorialEmotiveButtons({ sessionId, testMode = false, on
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#E8E8E8] px-4 py-4 border-t border-gray-300">
+      <footer ref={footerRef} className="bg-[#3D3D3D] px-4 py-4 border-t border-gray-700 relative z-20">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-center gap-2 mb-3 text-gray-500 text-sm">
             <Lock className="w-4 h-4" />

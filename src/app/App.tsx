@@ -3,6 +3,8 @@ import { DialTestOption2 } from "./components/dial-test-option2";
 import { DialTestTutorial } from "./components/dial-test-tutorial";
 import { DialTestSlider } from "./components/dial-test-slider";
 import { DialTestTutorialSlider } from "./components/dial-test-tutorial-slider";
+import { DialTestSliderRatcheted } from "./components/dial-test-slider-ratcheted";
+import { DialTestTutorialSliderRatcheted } from "./components/dial-test-tutorial-slider-ratcheted";
 import { DialTestEmotiveButtons } from "./components/dial-test-emotive-buttons";
 import { DialTestTutorialEmotiveButtons } from "./components/dial-test-tutorial-emotive-buttons";
 import { DialTestIntro } from "./components/dial-test-intro";
@@ -11,7 +13,7 @@ import { createSession, recordPageCompletion, saveFeedback } from "../utils/api"
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
 type AppStep = "intro" | "tutorial" | "dialTest" | "feedback" | "complete";
-type Variant = "buttons" | "slider" | "emotive-buttons";
+type Variant = "buttons" | "slider" | "slider-ratcheted" | "emotive-buttons";
 
 export default function App() {
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -25,6 +27,7 @@ export default function App() {
     const urlParams = new URLSearchParams(window.location.search);
     const urlVariant = urlParams.get('variant');
     const urlTestMode = urlParams.get('test');
+    const skipTutorial = urlParams.get('skipTutorial');
     
     // Enable test mode if ?test=true
     if (urlTestMode === 'true') {
@@ -32,9 +35,14 @@ export default function App() {
       console.log("🧪 TEST MODE ENABLED - Data will NOT be saved to database");
     }
     
+    // Skip tutorial if ?skipTutorial=true
+    if (skipTutorial === 'true') {
+      console.log("⏭️ SKIP TUTORIAL - Starting at dial test");
+    }
+    
     let assignedVariant: Variant;
     
-    if (urlVariant === 'slider' || urlVariant === 'buttons' || urlVariant === 'button' || urlVariant === 'emotive-buttons') {
+    if (urlVariant === 'slider' || urlVariant === 'slider-ratcheted' || urlVariant === 'buttons' || urlVariant === 'button' || urlVariant === 'emotive-buttons') {
       // Manual override via URL parameter (handle both 'button' and 'buttons')
       if (urlVariant === 'button') {
         assignedVariant = 'buttons';
@@ -101,7 +109,15 @@ export default function App() {
         const deviceInfo = detectDevice();
         console.log("Device detected:", getDeviceSummary(deviceInfo));
         
-        const response = await createSession(variant, deviceInfo);
+        // Capture all URL parameters from survey provider
+        const urlParams = new URLSearchParams(window.location.search);
+        const capturedParams: Record<string, string> = {};
+        urlParams.forEach((value, key) => {
+          capturedParams[key] = value;
+        });
+        console.log("URL parameters captured:", capturedParams);
+        
+        const response = await createSession(variant, deviceInfo, capturedParams);
         if (response.success) {
           setSessionId(response.sessionId);
           console.log("Session created:", response.sessionId, "Variant:", variant);
@@ -117,6 +133,10 @@ export default function App() {
   }, [variant, testMode]);
 
   const handleIntroComplete = async () => {
+    // Check if skipTutorial URL parameter is set
+    const urlParams = new URLSearchParams(window.location.search);
+    const skipTutorial = urlParams.get('skipTutorial');
+    
     if (sessionId && !testMode) {
       try {
         await recordPageCompletion(sessionId, "intro");
@@ -127,7 +147,14 @@ export default function App() {
     } else if (testMode) {
       console.log("🧪 Test mode: Skipped saving intro completion");
     }
-    setStep("tutorial");
+    
+    // Skip to dial test if parameter is set
+    if (skipTutorial === 'true') {
+      console.log("⏭️ Skipping tutorial, going directly to dial test");
+      setStep("dialTest");
+    } else {
+      setStep("tutorial");
+    }
   };
 
   const handleTutorialComplete = async () => {
@@ -164,9 +191,10 @@ export default function App() {
         console.log(`Session ID: ${sessionId}`);
         console.log(`Variant: ${variant}`);
         console.log(`To retrieve this session's data, use: getSessionData("${sessionId}")`);
-        console.log(`To retrieve all sessions, use: getAllSessions()`);
       } catch (error) {
         console.error("Failed to save feedback:", error);
+        alert("Failed to save feedback. Please try again.");
+        return;
       }
     } else if (testMode) {
       console.log("🧪 Test mode: Skipped saving feedback");
@@ -177,24 +205,47 @@ export default function App() {
     setStep("complete");
   };
 
+  // Redirect to callback URL when complete
+  useEffect(() => {
+    if (step === "complete") {
+      // Get RID from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const rid = urlParams.get('RID') || '';
+      
+      // Construct callback URL
+      const callbackUrl = `https://notch.insights.supply/cb?token=23a7efa4-df2c-4b40-a3c2-c09541e276af&RID=${rid}`;
+      
+      console.log(`Redirecting to callback URL: ${callbackUrl}`);
+      
+      // Redirect after a brief delay to show thank you message
+      setTimeout(() => {
+        window.location.href = callbackUrl;
+      }, 2000);
+    }
+  }, [step]);
+
   switch (step) {
     case "intro":
       return <DialTestIntro onContinue={handleIntroComplete} />;
     case "tutorial":
       if (variant === "emotive-buttons") {
-        return <DialTestTutorialEmotiveButtons sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} />;
+        return <DialTestTutorialEmotiveButtons sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} progress={50} />;
       } else if (variant === "buttons") {
-        return <DialTestTutorial sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} />;
+        return <DialTestTutorial sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} progress={50} />;
+      } else if (variant === "slider-ratcheted") {
+        return <DialTestTutorialSliderRatcheted sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} progress={50} />;
       } else {
-        return <DialTestTutorialSlider sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} />;
+        return <DialTestTutorialSlider sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} progress={50} />;
       }
     case "dialTest":
       if (variant === "buttons") {
-        return <DialTestOption2 sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} />;
+        return <DialTestOption2 sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} progress={75} />;
       } else if (variant === "emotive-buttons") {
-        return <DialTestEmotiveButtons sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} />;
+        return <DialTestEmotiveButtons sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} progress={75} />;
+      } else if (variant === "slider-ratcheted") {
+        return <DialTestSliderRatcheted sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} progress={75} />;
       } else {
-        return <DialTestSlider sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} />;
+        return <DialTestSlider sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} progress={75} />;
       }
     case "feedback":
       return (

@@ -34,6 +34,7 @@ app.post("/make-server-640b0dec/session/create", async (c) => {
     const body = await c.req.json();
     const variant = body?.variant || "unknown";
     const deviceInfo = body?.deviceInfo || null;
+    const urlParams = body?.urlParams || null;
     
     const sessionData = {
       sessionId,
@@ -41,6 +42,7 @@ app.post("/make-server-640b0dec/session/create", async (c) => {
       status: "active",
       variant, // Store A/B test variant
       deviceInfo, // Store device type, platform, browser, screen size, etc.
+      urlParams, // Store all URL parameters from survey provider
       pages: {
         intro: { completed: false },
         tutorial: { completed: false },
@@ -50,7 +52,7 @@ app.post("/make-server-640b0dec/session/create", async (c) => {
     
     await kv.set(`session:${sessionId}`, sessionData);
     
-    console.log(`Session created: ${sessionId}, Variant: ${variant}, Device: ${deviceInfo?.deviceType || 'unknown'} (${deviceInfo?.platform || 'unknown'})`);
+    console.log(`Session created: ${sessionId}, Variant: ${variant}, Device: ${deviceInfo?.deviceType || 'unknown'} (${deviceInfo?.platform || 'unknown'}), URL Params: ${Object.keys(urlParams || {}).length} params`);
     
     return c.json({ 
       success: true, 

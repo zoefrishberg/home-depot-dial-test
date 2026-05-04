@@ -12,6 +12,7 @@ interface DialTestEmotiveButtonsProps {
   sessionId: string | null;
   testMode?: boolean;
   onComplete?: () => void;
+  progress: number;
 }
 
 interface ReactionBurst {
@@ -21,7 +22,7 @@ interface ReactionBurst {
   emoji: string;
 }
 
-export function DialTestEmotiveButtons({ sessionId, testMode = false, onComplete }: DialTestEmotiveButtonsProps) {
+export function DialTestEmotiveButtons({ sessionId, testMode = false, onComplete, progress }: DialTestEmotiveButtonsProps) {
   const [intensity, setIntensity] = useState(0); // -100 to 100
   const [isPlaying, setIsPlaying] = useState(false);
   const [dataPoints, setDataPoints] = useState<DataPoint[]>([]);
@@ -41,7 +42,7 @@ export function DialTestEmotiveButtons({ sessionId, testMode = false, onComplete
   const [holdDuration, setHoldDuration] = useState(0);
   const burstIdCounter = useRef(0);
 
-  const VIDEO_SRC = "https://vod-prod-02-source-u4t2w48mf8oc.s3.amazonaws.com/5ad7d3c623a9b5d7aec16c1c-38b5d74b0144255d9279ac39376df9de.mp4";
+  const VIDEO_SRC = "https://vod-prod-02-source-u4t2w48mf8oc.s3.amazonaws.com/66e9ada2497b6eaa620de6d6-96c9c123bc405c87dfe5f25019c1a876.mp4";
 
   // Keep intensityRef in sync with intensity state
   useEffect(() => {
@@ -201,6 +202,8 @@ export function DialTestEmotiveButtons({ sessionId, testMode = false, onComplete
     console.log(`[Emotive Buttons Variant] Submitting dial test data...`);
     console.log(`Session ID: ${sessionId}`);
     console.log(`Data points collected: ${recordedDataPoints.length}`);
+    console.log(`Sample data points:`, recordedDataPoints.slice(0, 5));
+    console.log(`Last 3 data points:`, recordedDataPoints.slice(-3));
     console.log(`Test mode: ${testMode}`);
     
     if (testMode) {
@@ -262,9 +265,9 @@ export function DialTestEmotiveButtons({ sessionId, testMode = false, onComplete
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#E8E8E8] flex flex-col">
-      {/* Header */}
-      <header className="bg-[#3D3D3D] px-3 py-2 flex items-center justify-between flex-shrink-0">
+    <div className="min-h-[100dvh] bg-black flex flex-col">
+      {/* Header - More Compact */}
+      <header className="bg-[#313131] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-30">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 border-2 border-white rounded flex items-center justify-center">
             <div className="w-2.5 h-2.5 bg-white" style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}></div>
@@ -283,121 +286,112 @@ export function DialTestEmotiveButtons({ sessionId, testMode = false, onComplete
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-3 py-2 overflow-y-auto min-h-0">
-        <div className="max-w-2xl mx-auto relative">
-          <h1 className="text-lg text-[#3D3D3D] mb-1">
-            Watch the video and share your reaction
-          </h1>
-          <p className="text-xs text-gray-600 mb-2">
-            ⏱ Press and hold a button to show how you feel as you watch.
-          </p>
+      <main className="flex-1 relative overflow-hidden">
+        {/* Full-Screen Video Background */}
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-cover"
+          src={VIDEO_SRC}
+          playsInline
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onEnded={handleEnded}
+          onLoadedMetadata={handleLoadedMetadata}
+          onTimeUpdate={handleTimeUpdate}
+          controls={false}
+        >
+          Your browser does not support the video tag.
+        </video>
 
-          {/* Video Player */}
-          <div className="bg-black rounded-lg overflow-hidden mb-2 shadow-lg relative">
-            <video
-              ref={videoRef}
-              className="w-full aspect-video"
-              src={VIDEO_SRC}
-              playsInline
-              onPlay={handlePlay}
-              onPause={handlePause}
-              onEnded={handleEnded}
-              onLoadedMetadata={handleLoadedMetadata}
-              onTimeUpdate={handleTimeUpdate}
-              controls={hasStartedPlaying}
+        {/* Pre-play overlay */}
+        {!hasStartedPlaying && (
+          <div
+            className="absolute inset-0 bg-black flex flex-col items-center justify-center cursor-pointer z-20"
+            onClick={handleStartVideo}
+          >
+            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-6 hover:bg-white/30 transition-colors">
+              <Play className="w-8 h-8 text-white ml-1" fill="white" />
+            </div>
+            <div className="flex items-center gap-2 text-white/80 text-sm">
+              <Volume2 className="w-5 h-5" />
+              <span>Turn your sound on before playing</span>
+            </div>
+          </div>
+        )}
+
+        {/* Emotion Curve Overlay */}
+        {hasStartedPlaying && dataPoints.length > 0 && (
+          <div className="absolute inset-0 pointer-events-none z-10">
+            {/* Bottom timeline curve */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent">
+              <svg 
+                viewBox="0 0 640 120" 
+                preserveAspectRatio="none"
+                className="w-full h-full"
+              >
+                {/* Neutral center line */}
+                <line 
+                  x1="0" 
+                  y1="60" 
+                  x2="640" 
+                  y2="60" 
+                  stroke="rgba(255, 255, 255, 0.3)" 
+                  strokeWidth="1"
+                  strokeDasharray="4 4"
+                />
+                
+                {/* Emotion curve */}
+                <path
+                  d={generateCurvePath()}
+                  fill="none"
+                  stroke={intensity > 0 ? "#DD493C" : intensity < 0 ? "#F4D125" : "#9CA3AF"}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.9"
+                />
+                
+                {/* Current position indicator */}
+                {isPlaying && videoDuration > 0 && (
+                  <line 
+                    x1={`${(currentTime / videoDuration) * 100}%`}
+                    y1="0" 
+                    x2={`${(currentTime / videoDuration) * 100}%`}
+                    y2="120" 
+                    stroke="rgba(91, 159, 237, 0.8)" 
+                    strokeWidth="2"
+                  />
+                )}
+              </svg>
+            </div>
+          </div>
+        )}
+
+        {/* Reaction Burst Container - Covers video */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-15">
+          {reactionBursts.map((burst) => (
+            <div
+              key={burst.id}
+              className="absolute"
+              style={{
+                left: `${burst.x}%`,
+                bottom: '160px',
+                animation: `floatUp 3s ease-out forwards`,
+              }}
             >
-              Your browser does not support the video tag.
-            </video>
+              <span className="opacity-0" style={{
+                fontSize: '1.8rem',
+                animation: `fadeInOut 3s ease-out forwards`
+              }}>
+                {burst.emoji}
+              </span>
+            </div>
+          ))}
+        </div>
 
-            {/* Pre-play overlay */}
-            {!hasStartedPlaying && (
-              <div
-                className="absolute inset-0 bg-black flex flex-col items-center justify-center cursor-pointer z-20"
-                onClick={handleStartVideo}
-              >
-                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-6 hover:bg-white/30 transition-colors">
-                  <Play className="w-8 h-8 text-white ml-1" fill="white" />
-                </div>
-                <div className="flex items-center gap-2 text-white/80 text-sm">
-                  <Volume2 className="w-5 h-5" />
-                  <span>Turn your sound on before playing</span>
-                </div>
-              </div>
-            )}
-
-            {/* Emotion Curve Overlay */}
-            {hasStartedPlaying && dataPoints.length > 0 && (
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Bottom timeline curve */}
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent">
-                  <svg 
-                    viewBox="0 0 640 120" 
-                    preserveAspectRatio="none"
-                    className="w-full h-full"
-                  >
-                    {/* Neutral center line */}
-                    <line 
-                      x1="0" 
-                      y1="60" 
-                      x2="640" 
-                      y2="60" 
-                      stroke="rgba(255, 255, 255, 0.3)" 
-                      strokeWidth="1"
-                      strokeDasharray="4 4"
-                    />
-                    
-                    {/* Emotion curve */}
-                    <path
-                      d={generateCurvePath()}
-                      fill="none"
-                      stroke={intensity > 0 ? "#DD493C" : intensity < 0 ? "#F4D125" : "#9CA3AF"}
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      opacity="0.9"
-                    />
-                    
-                    {/* Current position indicator */}
-                    {isPlaying && videoDuration > 0 && (
-                      <line 
-                        x1={`${(currentTime / videoDuration) * 100}%`}
-                        y1="0" 
-                        x2={`${(currentTime / videoDuration) * 100}%`}
-                        y2="120" 
-                        stroke="rgba(91, 159, 237, 0.8)" 
-                        strokeWidth="2"
-                      />
-                    )}
-                  </svg>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Reaction Burst Container - Covers video and buttons */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
-            {reactionBursts.map((burst) => (
-              <div
-                key={burst.id}
-                className="absolute"
-                style={{
-                  left: `${burst.x}%`,
-                  bottom: '60px',
-                  animation: `floatUp 3s ease-out forwards`,
-                }}
-              >
-                <span className="opacity-0" style={{
-                  fontSize: '1.8rem',
-                  animation: `fadeInOut 3s ease-out forwards`
-                }}>
-                  {burst.emoji}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Circular Buttons - Below Video */}
-          <div className="relative flex items-center justify-between px-4 mb-4">
+        {/* Circular Buttons Overlay - Bottom */}
+        <div className="absolute bottom-8 left-0 right-0 z-20 px-8">
+          <div className="max-w-md mx-auto flex items-center justify-between">
             {/* NOPE Button - Far Left */}
             <button
               onPointerDown={() => handleButtonPress("nope")}
@@ -409,10 +403,10 @@ export function DialTestEmotiveButtons({ sessionId, testMode = false, onComplete
                 WebkitTouchCallout: 'none',
                 userSelect: 'none'
               }}
-              className={`w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center gap-1 transition-all select-none touch-none ${
+              className={`w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center gap-1 transition-all select-none touch-none shadow-lg ${
                 activeButton === "nope"
                   ? "bg-[#F4D125]/20 border-[#F4D125] scale-95"
-                  : "bg-white border-[#F4D125] hover:scale-105 active:scale-95 shadow-lg"
+                  : "bg-white border-[#F4D125] hover:scale-105 active:scale-95"
               }`}
             >
               <ThumbsDown className={`w-12 h-12 text-[#F4D125]`} strokeWidth={2.5} />
@@ -430,10 +424,10 @@ export function DialTestEmotiveButtons({ sessionId, testMode = false, onComplete
                 WebkitTouchCallout: 'none',
                 userSelect: 'none'
               }}
-              className={`w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center gap-1 transition-all select-none touch-none ${
+              className={`w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center gap-1 transition-all select-none touch-none shadow-lg ${
                 activeButton === "love"
                   ? "bg-[#DD493C]/20 border-[#DD493C] scale-95"
-                  : "bg-white border-[#DD493C] hover:scale-105 active:scale-95 shadow-lg"
+                  : "bg-white border-[#DD493C] hover:scale-105 active:scale-95"
               }`}
             >
               <Heart className={`w-12 h-12 text-[#DD493C]`} strokeWidth={2.5} fill="currentColor" />
@@ -444,7 +438,7 @@ export function DialTestEmotiveButtons({ sessionId, testMode = false, onComplete
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#E8E8E8] px-4 py-6 border-t border-gray-300">
+      <footer className="bg-[#E8E8E8] px-4 py-6 border-t border-gray-300 relative z-30">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-center gap-2 mb-4 text-gray-500 text-sm">
             <Lock className="w-4 h-4" />

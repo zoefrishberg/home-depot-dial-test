@@ -25,10 +25,10 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
 }
 
 // Session management
-export async function createSession(variant?: string, deviceInfo?: DeviceInfo) {
+export async function createSession(variant?: string, deviceInfo?: DeviceInfo, urlParams?: Record<string, string>) {
   return apiCall('/session/create', {
     method: 'POST',
-    body: JSON.stringify({ variant, deviceInfo }),
+    body: JSON.stringify({ variant, deviceInfo, urlParams }),
   });
 }
 
