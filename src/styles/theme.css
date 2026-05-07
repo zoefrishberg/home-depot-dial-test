@@ -43,6 +43,7 @@
   /* Brand color tokens (sourced from sway/packages/ui colors.css) */
   --azure-70: hsla(210, 90%, 48%, 100%);
   --azure-80: hsla(210, 60%, 45%, 100%);
+  --dark-40: hsla(0, 60%, 0%, 40%);
 }
 
 .dark {

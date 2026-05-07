@@ -526,7 +526,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
             <Button
               onClick={handleContinue}
               disabled={currentTime < tutorialDuration}
-              className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:bg-[var(--dark-40)] disabled:opacity-100 disabled:cursor-not-allowed"
             >
               Continue
             </Button>
