@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Gift, Lock, ChevronDown, Check, ArrowRight } from "lucide-react";
+import { Gift, ChevronDown, Check, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
 
 interface FeedbackTypeformProps {
@@ -321,10 +321,6 @@ export function FeedbackTypeform({
       {/* Footer */}
       <footer className="bg-[#E8E8E8] px-4 py-6 border-t border-gray-300">
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-center gap-2 mb-4 text-gray-500 text-sm">
-            <Lock className="w-4 h-4" />
-            <span>Your answer is private</span>
-          </div>
           <div className="flex gap-3">
             <Button
               variant="outline"

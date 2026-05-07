@@ -72,9 +72,9 @@ export function DialTestFirstExposure({
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-6 overflow-y-auto">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl font-bold text-[#3D3D3D] mb-6 text-center">
+      <main className="flex-1 px-4 py-6 overflow-y-auto flex items-center">
+        <div className="max-w-2xl w-full mx-auto">
+          <h1 className="text-2xl font-bold text-[#3D3D3D] mb-6 text-left">
             Please watch the following video with sound.
           </h1>
 

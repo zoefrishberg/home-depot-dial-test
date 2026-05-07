@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Gift, Lock, MoveHorizontal } from "lucide-react";
+import { Gift, MoveHorizontal } from "lucide-react";
 import { saveDialData } from "../../utils/api";
 
 interface TutorialProps {
@@ -504,10 +504,6 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
       {/* Footer */}
       <footer ref={footerRef} className="bg-[#E8E8E8] px-4 py-4 border-t border-gray-300">
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-center gap-2 mb-3 text-gray-500 text-sm">
-            <Lock className="w-4 h-4" />
-            <span>Your answer is private</span>
-          </div>
           <div className="flex gap-3">
             <Button
               variant="outline"
