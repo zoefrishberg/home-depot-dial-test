@@ -216,7 +216,7 @@ export function DialTestOption1() {
             </Button>
             <Button
               onClick={handleSubmit}
-              className="flex-1 bg-[#5B9FED] hover:bg-[#4A8EDC] text-white border-0 h-12"
+              className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12"
             >
               Continue
             </Button>

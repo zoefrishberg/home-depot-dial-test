@@ -344,7 +344,7 @@ export function FeedbackTypeform({
               <Button
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-                className="flex-1 bg-[#5B9FED] hover:bg-[#4A8EDC] text-white border-0 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Submit
               </Button>
@@ -354,7 +354,7 @@ export function FeedbackTypeform({
                 disabled={
                   currentQuestion.required && !currentAnswer?.trim()
                 }
-                className="flex-1 bg-[#5B9FED] hover:bg-[#4A8EDC] text-white border-0 h-12 disabled:opacity-50 disabled:cursor-not-allowed gap-2"
+                className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:opacity-50 disabled:cursor-not-allowed gap-2"
               >
                 OK
                 <ArrowRight className="w-4 h-4" />

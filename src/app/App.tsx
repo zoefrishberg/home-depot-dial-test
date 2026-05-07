@@ -8,11 +8,12 @@ import { DialTestTutorialSliderRatcheted } from "./components/dial-test-tutorial
 import { DialTestEmotiveButtons } from "./components/dial-test-emotive-buttons";
 import { DialTestTutorialEmotiveButtons } from "./components/dial-test-tutorial-emotive-buttons";
 import { DialTestIntro } from "./components/dial-test-intro";
+import { DialTestFirstExposure } from "./components/dial-test-first-exposure";
 import { FeedbackTypeform } from "./components/feedback-typeform";
 import { createSession, recordPageCompletion, saveFeedback } from "../utils/api";
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
-type AppStep = "intro" | "tutorial" | "dialTest" | "feedback" | "complete";
+type AppStep = "intro" | "firstExposure" | "tutorial" | "dialTest" | "feedback" | "complete";
 type Variant = "buttons" | "slider" | "slider-ratcheted" | "emotive-buttons";
 
 export default function App() {
@@ -153,8 +154,22 @@ export default function App() {
       console.log("⏭️ Skipping tutorial, going directly to dial test");
       setStep("dialTest");
     } else {
-      setStep("tutorial");
+      setStep("firstExposure");
     }
+  };
+
+  const handleFirstExposureComplete = async () => {
+    if (sessionId && !testMode) {
+      try {
+        await recordPageCompletion(sessionId, "firstExposure");
+        console.log("First exposure page completed");
+      } catch (error) {
+        console.error("Failed to record first exposure completion:", error);
+      }
+    } else if (testMode) {
+      console.log("🧪 Test mode: Skipped saving first exposure completion");
+    }
+    setStep("tutorial");
   };
 
   const handleTutorialComplete = async () => {
@@ -227,6 +242,16 @@ export default function App() {
   switch (step) {
     case "intro":
       return <DialTestIntro onContinue={handleIntroComplete} />;
+    case "firstExposure":
+      return (
+        <DialTestFirstExposure
+          sessionId={sessionId}
+          testMode={testMode}
+          onComplete={handleFirstExposureComplete}
+          onBack={() => setStep("intro")}
+          progress={25}
+        />
+      );
     case "tutorial":
       if (variant === "emotive-buttons") {
         return <DialTestTutorialEmotiveButtons sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} progress={50} />;

@@ -39,6 +39,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Brand color tokens (sourced from sway/packages/ui colors.css) */
+  --azure-70: hsla(210, 90%, 48%, 100%);
+  --azure-80: hsla(210, 60%, 45%, 100%);
 }
 
 .dark {

@@ -170,7 +170,7 @@ export function ConstantSumQuestion() {
             <Button
               onClick={handleSubmit}
               disabled={!isValid}
-              className="flex-1 bg-[#5B9FED] hover:bg-[#4A8EDC] text-white border-0 h-12 disabled:bg-gray-400 disabled:text-gray-600"
+              className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:bg-gray-400 disabled:text-gray-600"
             >
               Continue
             </Button>

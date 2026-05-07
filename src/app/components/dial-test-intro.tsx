@@ -85,15 +85,8 @@ export function DialTestIntro({ onContinue }: IntroProps) {
           </div>
           <div className="flex gap-3">
             <Button
-              variant="outline"
-              className="flex-1 bg-[#C8C8C8] hover:bg-[#B8B8B8] text-[#3D3D3D] border-0 h-12"
-              disabled
-            >
-              Back
-            </Button>
-            <Button
               onClick={onContinue}
-              className="flex-1 bg-[#5B9FED] hover:bg-[#4A8EDC] text-white border-0 h-12"
+              className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12"
             >
               Continue
             </Button>

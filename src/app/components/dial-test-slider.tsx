@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Gift, Volume2, Play, MoveHorizontal } from "lucide-react";
 import { saveDialData, recordPageCompletion } from "../../utils/api";
+import { DIAL_TEST_VIDEO_SRC } from "../constants";
 
 interface DataPoint {
   timestamp: number;
@@ -32,7 +33,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, progre
   const recordingInterval = useRef<NodeJS.Timeout | null>(null);
   const intensityRef = useRef(0);
 
-  const VIDEO_SRC = "https://vod-prod-02-source-u4t2w48mf8oc.s3.amazonaws.com/66e9ada2497b6eaa620de6d6-96c9c123bc405c87dfe5f25019c1a876.mp4";
+  const VIDEO_SRC = DIAL_TEST_VIDEO_SRC;
 
   // Keep intensityRef in sync with intensity state
   useEffect(() => {
@@ -627,7 +628,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, progre
             disabled={!hasEnded}
             className={`flex-1 h-10 border-0 rounded-xl font-medium text-sm transition-colors ${
               hasEnded
-                ? 'bg-[#5B9FED] hover:bg-[#4A8EDC] text-white cursor-pointer'
+                ? 'bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white cursor-pointer'
                 : 'bg-[rgba(0,0,0,0.4)] text-white cursor-not-allowed opacity-50'
             }`}
           >

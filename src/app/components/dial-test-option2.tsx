@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Gift, Lock, Heart, X, Volume2, Play } from "lucide-react";
 import { saveDialData, recordPageCompletion } from "../../utils/api";
+import { DIAL_TEST_VIDEO_SRC } from "../constants";
 
 interface DataPoint {
   timestamp: number;
@@ -33,7 +34,7 @@ export function DialTestOption2({ sessionId, testMode = false, onComplete, progr
   const activeButtonRef = useRef<"negative" | "positive" | null>(null);
   const [holdDuration, setHoldDuration] = useState(0);
 
-  const VIDEO_SRC = "https://vod-prod-02-source-u4t2w48mf8oc.s3.amazonaws.com/66e9ada2497b6eaa620de6d6-96c9c123bc405c87dfe5f25019c1a876.mp4";
+  const VIDEO_SRC = DIAL_TEST_VIDEO_SRC;
 
   // Keep intensityRef in sync with intensity state
   useEffect(() => {
@@ -482,7 +483,7 @@ export function DialTestOption2({ sessionId, testMode = false, onComplete, progr
               disabled={!hasEnded}
               className={`flex-1 h-12 border-0 transition-all ${
                 hasEnded 
-                  ? 'bg-[#5B9FED] hover:bg-[#4A8EDC] text-white cursor-pointer' 
+                  ? 'bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white cursor-pointer' 
                   : 'bg-gray-400 text-gray-200 cursor-not-allowed opacity-60'
               }`}
             >

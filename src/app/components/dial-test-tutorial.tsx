@@ -370,7 +370,7 @@ export function DialTestTutorial({ sessionId, onComplete, progress }: TutorialPr
             <Button
               onClick={handleContinue}
               disabled={currentTime < tutorialDuration}
-              className="flex-1 bg-[#5B9FED] hover:bg-[#4A8EDC] text-white border-0 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Continue
             </Button>
