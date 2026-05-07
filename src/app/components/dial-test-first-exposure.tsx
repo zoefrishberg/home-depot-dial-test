@@ -112,9 +112,11 @@ export function DialTestFirstExposure({
 
       <footer className="bg-[#E8E8E8] px-4 py-6 border-t border-gray-300">
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-center mb-4 text-gray-500 text-sm min-h-[1.25rem]">
-            {!hasEnded && <span>Please watch the entire video to continue</span>}
-          </div>
+          {!hasEnded && (
+            <div className="flex items-center justify-center mb-4 text-gray-500 text-sm">
+              <span>Please watch the entire video to continue</span>
+            </div>
+          )}
           <div className="flex gap-3">
             <Button
               variant="outline"

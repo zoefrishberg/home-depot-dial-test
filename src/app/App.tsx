@@ -3,11 +3,12 @@ import { DialTestSlider } from "./components/dial-test-slider";
 import { DialTestTutorialSlider } from "./components/dial-test-tutorial-slider";
 import { DialTestIntro } from "./components/dial-test-intro";
 import { DialTestFirstExposure } from "./components/dial-test-first-exposure";
+import { DialTestHowItWorks } from "./components/dial-test-how-it-works";
 import { FeedbackTypeform } from "./components/feedback-typeform";
 import { createSession, recordPageCompletion, saveFeedback } from "../utils/api";
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
-type AppStep = "intro" | "firstExposure" | "tutorial" | "dialTest" | "feedback" | "complete";
+type AppStep = "intro" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "feedback" | "complete";
 
 // Variant is fixed to "slider"; kept as a constant so the backend continues to
 // receive a value in the same shape it expects.
@@ -130,6 +131,20 @@ export default function App() {
     } else if (testMode) {
       console.log("🧪 Test mode: Skipped saving first exposure completion");
     }
+    setStep("howItWorks");
+  };
+
+  const handleHowItWorksComplete = async () => {
+    if (sessionId && !testMode) {
+      try {
+        await recordPageCompletion(sessionId, "howItWorks");
+        console.log("How it works page completed");
+      } catch (error) {
+        console.error("Failed to record how it works completion:", error);
+      }
+    } else if (testMode) {
+      console.log("🧪 Test mode: Skipped saving how it works completion");
+    }
     setStep("tutorial");
   };
 
@@ -206,6 +221,14 @@ export default function App() {
           onComplete={handleFirstExposureComplete}
           onBack={() => setStep("intro")}
           progress={25}
+        />
+      );
+    case "howItWorks":
+      return (
+        <DialTestHowItWorks
+          onComplete={handleHowItWorksComplete}
+          onBack={() => setStep("firstExposure")}
+          progress={38}
         />
       );
     case "tutorial":
