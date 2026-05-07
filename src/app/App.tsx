@@ -4,11 +4,12 @@ import { DialTestTutorialSlider } from "./components/dial-test-tutorial-slider";
 import { DialTestIntro } from "./components/dial-test-intro";
 import { DialTestFirstExposure } from "./components/dial-test-first-exposure";
 import { DialTestHowItWorks } from "./components/dial-test-how-it-works";
+import { DialTestHandSelection } from "./components/dial-test-hand-selection";
 import { FeedbackTypeform } from "./components/feedback-typeform";
 import { createSession, recordPageCompletion, saveFeedback } from "../utils/api";
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
-type AppStep = "intro" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "feedback" | "complete";
+type AppStep = "intro" | "firstExposure" | "howItWorks" | "handSelection" | "tutorial" | "dialTest" | "feedback" | "complete";
 
 // Variant is fixed to "slider"; kept as a constant so the backend continues to
 // receive a value in the same shape it expects.
@@ -113,8 +114,8 @@ export default function App() {
     }
 
     if (skipTutorial === 'true') {
-      console.log("⏭️ Skipping tutorial, going directly to dial test");
-      setStep("dialTest");
+      console.log("⏭️ Skipping tutorial, going to hand selection then dial test");
+      setStep("handSelection");
     } else {
       setStep("firstExposure");
     }
@@ -145,7 +146,25 @@ export default function App() {
     } else if (testMode) {
       console.log("🧪 Test mode: Skipped saving how it works completion");
     }
-    setStep("tutorial");
+    setStep("handSelection");
+  };
+
+  const handleHandSelectionComplete = async (choice: "left" | "right") => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const skipTutorial = urlParams.get('skipTutorial');
+
+    if (sessionId && !testMode) {
+      try {
+        await recordPageCompletion(sessionId, "handSelection");
+        console.log("Hand selection page completed:", choice);
+      } catch (error) {
+        console.error("Failed to record hand selection completion:", error);
+      }
+    } else if (testMode) {
+      console.log("🧪 Test mode: Skipped saving hand selection completion");
+    }
+
+    setStep(skipTutorial === 'true' ? "dialTest" : "tutorial");
   };
 
   const handleTutorialComplete = async () => {
@@ -220,7 +239,7 @@ export default function App() {
           testMode={testMode}
           onComplete={handleFirstExposureComplete}
           onBack={() => setStep("intro")}
-          progress={25}
+          progress={20}
         />
       );
     case "howItWorks":
@@ -228,13 +247,21 @@ export default function App() {
         <DialTestHowItWorks
           onComplete={handleHowItWorksComplete}
           onBack={() => setStep("firstExposure")}
-          progress={38}
+          progress={35}
+        />
+      );
+    case "handSelection":
+      return (
+        <DialTestHandSelection
+          onComplete={handleHandSelectionComplete}
+          onBack={() => setStep("howItWorks")}
+          progress={50}
         />
       );
     case "tutorial":
-      return <DialTestTutorialSlider sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} progress={50} />;
+      return <DialTestTutorialSlider sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} progress={65} />;
     case "dialTest":
-      return <DialTestSlider sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} progress={75} />;
+      return <DialTestSlider sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} progress={80} />;
     case "feedback":
       return (
         <FeedbackTypeform
