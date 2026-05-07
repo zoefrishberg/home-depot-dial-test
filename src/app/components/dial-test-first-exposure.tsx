@@ -30,9 +30,13 @@ export function DialTestFirstExposure({
   };
 
   // Prevent pausing once playback has started, until the video has ended.
+  // Read `ended` from the video element directly: the `pause` event fires
+  // immediately after `ended`, before React has flushed setHasEnded, so the
+  // captured `hasEnded` state would still be stale and trigger a replay.
   const handlePause = () => {
-    if (videoRef.current && hasStartedPlaying && !hasEnded) {
-      videoRef.current.play().catch((err) => {
+    const video = videoRef.current;
+    if (video && hasStartedPlaying && !video.ended) {
+      video.play().catch((err) => {
         console.error("Failed to resume video:", err);
       });
     }
