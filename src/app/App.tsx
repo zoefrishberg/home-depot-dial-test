@@ -99,9 +99,6 @@ export default function App() {
   }, [testMode]);
 
   const handleIntroComplete = async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const skipTutorial = urlParams.get('skipTutorial');
-
     if (sessionId && !testMode) {
       try {
         await recordPageCompletion(sessionId, "intro");
@@ -113,12 +110,7 @@ export default function App() {
       console.log("🧪 Test mode: Skipped saving intro completion");
     }
 
-    if (skipTutorial === 'true') {
-      console.log("⏭️ Skipping tutorial, going to hand selection then dial test");
-      setStep("handSelection");
-    } else {
-      setStep("firstExposure");
-    }
+    setStep("firstExposure");
   };
 
   const handleFirstExposureComplete = async () => {

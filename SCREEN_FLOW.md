@@ -10,16 +10,13 @@ flowchart TD
 
     Init --> Intro["intro<br/>DialTestIntro"]
 
-    Intro --> SkipQ{?skipTutorial=true?}
-    SkipQ -->|yes| HandSel
-    SkipQ -->|no| FirstExp["firstExposure<br/>DialTestFirstExposure<br/>(progress 20%)"]
-
+    Intro --> FirstExp["firstExposure<br/>DialTestFirstExposure<br/>(progress 20%)"]
     FirstExp --> HowIt["howItWorks<br/>DialTestHowItWorks<br/>(progress 35%)"]
     HowIt --> HandSel["handSelection<br/>DialTestHandSelection<br/>(progress 50%)"]
 
-    HandSel --> SkipQ2{?skipTutorial=true?}
-    SkipQ2 -->|yes| DialTest
-    SkipQ2 -->|no| Tutorial["tutorial<br/>DialTestTutorialSlider<br/>(progress 65%)"]
+    HandSel --> SkipQ{?skipTutorial=true?}
+    SkipQ -->|yes| DialTest
+    SkipQ -->|no| Tutorial["tutorial<br/>DialTestTutorialSlider<br/>(progress 65%)"]
 
     Tutorial --> DialTest["dialTest<br/>DialTestSlider<br/>(progress 80%)"]
 
@@ -58,7 +55,7 @@ flowchart TD
 | Param          | Values | Effect                                                                                   |
 | -------------- | ------ | ---------------------------------------------------------------------------------------- |
 | `test`         | `true` | Test mode — nothing is saved to the database                                              |
-| `skipTutorial` | `true` | Skip `firstExposure`, `howItWorks`, and `tutorial`; jump `intro` → `handSelection` → `dialTest` |
+| `skipTutorial` | `true` | Skip the `tutorial` screen only; flow becomes `… → handSelection → dialTest` |
 | `RID`          | any    | Forwarded to callback URL on completion                                                  |
 
 The variant is fixed to `slider` and sent to the backend as such for shape compatibility (`VARIANT` constant in `App.tsx`).

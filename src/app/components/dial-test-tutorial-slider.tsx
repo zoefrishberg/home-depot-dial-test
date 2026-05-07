@@ -240,9 +240,6 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
               style={{ width: `${progress}%` }}
             ></div>
           </div>
-          <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center">
-            <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
-          </div>
           <Gift className="w-4 h-4 text-white" />
         </div>
       </header>

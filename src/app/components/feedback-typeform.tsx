@@ -202,9 +202,6 @@ export function FeedbackTypeform({
               transition={{ duration: 0.4, ease: "easeOut" }}
             />
           </div>
-          <div className="w-5 h-5 bg-gray-600 rounded-full flex items-center justify-center">
-            <div className="w-3 h-3 bg-white rounded-full"></div>
-          </div>
           <Gift className="w-5 h-5 text-white" />
         </div>
       </header>
