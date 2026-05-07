@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Gift, ChevronDown, Check, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
