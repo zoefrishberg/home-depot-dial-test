@@ -5,7 +5,6 @@ import { Button } from "./ui/button";
 
 interface FeedbackTypeformProps {
   sessionId: string | null;
-  variant?: "buttons" | "slider" | "emotive-buttons";
   onSubmit: (answers: {
     easeOfUse: string;
     attentionDifficulty: string;
@@ -29,7 +28,6 @@ const OPTION_KEYS = ["A", "B", "C", "D", "E"];
 
 export function FeedbackTypeform({
   sessionId,
-  variant = "buttons",
   onSubmit,
   onBack,
 }: FeedbackTypeformProps) {
@@ -39,13 +37,10 @@ export function FeedbackTypeform({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Generate questions based on variant
   const QUESTIONS: Question[] = [
     {
       id: "easeOfUse",
-      question: variant === "slider"
-        ? "How easy was it to use the slider?"
-        : "How easy was it to use the buttons?",
+      question: "How easy was it to use the slider?",
       type: "single",
       options: [
         "Very easy",
@@ -58,9 +53,7 @@ export function FeedbackTypeform({
     },
     {
       id: "attentionDifficulty",
-      question: variant === "slider"
-        ? "Was it difficult to pay attention to the video while using the slider?"
-        : "Was it difficult to pay attention to the video while pressing the buttons?",
+      question: "Was it difficult to pay attention to the video while using the slider?",
       type: "single",
       options: ["Not at all", "A little", "Somewhat", "A lot"],
       required: true,
