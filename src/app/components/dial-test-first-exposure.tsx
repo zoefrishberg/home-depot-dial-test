@@ -47,7 +47,8 @@ export function DialTestFirstExposure({
   };
 
   return (
-    <div className="min-h-screen bg-[#E8E8E8] flex flex-col">
+    <div className="min-h-screen bg-[#E8E8E8] flex justify-center">
+      <div className="w-full max-w-2xl min-h-screen flex flex-col border-x border-gray-300">
       <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 border-2 border-white rounded flex items-center justify-center">
@@ -69,13 +70,13 @@ export function DialTestFirstExposure({
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-6 overflow-y-auto flex items-center">
+      <main className="flex-1 py-6 overflow-y-auto flex items-center">
         <div className="max-w-2xl w-full mx-auto">
-          <h1 className="text-2xl font-bold text-[#3D3D3D] mb-6 text-left">
+          <h1 className="mb-6 px-4">
             Please watch the following video with sound.
           </h1>
 
-          <div className="relative w-full max-h-[70vh] aspect-video bg-black rounded-lg overflow-hidden mx-auto">
+          <div className="relative w-full max-h-[70vh] aspect-video bg-black overflow-hidden mx-auto">
             <video
               ref={videoRef}
               className="absolute inset-0 w-full h-full object-contain"
@@ -107,7 +108,7 @@ export function DialTestFirstExposure({
         </div>
       </main>
 
-      <footer className="bg-[#E8E8E8] px-4 py-6 border-t border-gray-300">
+      <footer className="bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300">
         <div className="max-w-2xl mx-auto">
           {!hasEnded && (
             <div className="flex items-center justify-center mb-4 text-gray-500 text-sm">
@@ -132,6 +133,7 @@ export function DialTestFirstExposure({
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

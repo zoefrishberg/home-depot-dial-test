@@ -264,7 +264,8 @@ export default function App() {
       );
     case "complete":
       return (
-        <div className="min-h-screen bg-[#E8E8E8] flex flex-col">
+        <div className="min-h-screen bg-[#E8E8E8] flex justify-center">
+          <div className="w-full max-w-2xl min-h-screen flex flex-col border-x border-gray-300">
           <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 border-2 border-white rounded flex items-center justify-center">
@@ -285,10 +286,11 @@ export default function App() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-semibold text-[#3D3D3D] mb-2">Thank you!</h1>
+              <h1 className="mb-2">Thank you!</h1>
               <p className="text-gray-600">Your responses have been recorded. We appreciate your time and feedback.</p>
             </div>
           </main>
+          </div>
         </div>
       );
   }

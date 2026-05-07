@@ -182,7 +182,8 @@ export function FeedbackTypeform({
   };
 
   return (
-    <div className="min-h-screen bg-[#E8E8E8] flex flex-col">
+    <div className="min-h-screen bg-[#E8E8E8] flex justify-center">
+      <div className="w-full max-w-2xl min-h-screen flex flex-col border-x border-gray-300">
       {/* Header */}
       <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -316,7 +317,7 @@ export function FeedbackTypeform({
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#E8E8E8] px-4 py-6 border-t border-gray-300">
+      <footer className="bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300">
         <div className="max-w-2xl mx-auto">
           <div className="flex gap-3">
             <Button
@@ -349,6 +350,7 @@ export function FeedbackTypeform({
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

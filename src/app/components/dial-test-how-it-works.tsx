@@ -13,7 +13,8 @@ export function DialTestHowItWorks({
   progress,
 }: DialTestHowItWorksProps) {
   return (
-    <div className="min-h-screen bg-[#E8E8E8] flex flex-col">
+    <div className="min-h-screen bg-[#E8E8E8] flex justify-center">
+      <div className="w-full max-w-2xl min-h-screen flex flex-col border-x border-gray-300">
       <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 border-2 border-white rounded flex items-center justify-center">
@@ -37,10 +38,7 @@ export function DialTestHowItWorks({
 
       <main className="flex-1 flex flex-col justify-center px-6 py-8 gap-10">
         <div className="max-w-2xl mx-auto w-full flex flex-col gap-6">
-          <h1
-            className="text-[#3D3D3D] font-medium"
-            style={{ fontSize: "30px", lineHeight: "36px" }}
-          >
+          <h1>
             Share how the video makes you feel as you watch it again.
           </h1>
 
@@ -100,7 +98,7 @@ export function DialTestHowItWorks({
         </div>
       </main>
 
-      <footer className="bg-[#E8E8E8] px-4 py-6 border-t border-gray-300">
+      <footer className="bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300">
         <div className="max-w-2xl mx-auto">
           <div className="flex gap-3">
             <Button
@@ -119,6 +117,7 @@ export function DialTestHowItWorks({
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

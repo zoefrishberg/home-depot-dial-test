@@ -44,6 +44,7 @@
   --azure-70: hsla(210, 90%, 48%, 100%);
   --azure-80: hsla(210, 60%, 45%, 100%);
   --dark-40: hsla(0, 60%, 0%, 40%);
+  --dark-100: hsla(0, 60%, 0%, 100%);
 }
 
 .dark {
@@ -142,10 +143,12 @@
     font-size: var(--font-size);
   }
 
+  /* Matches sway/packages/ui Tailwind `text-3xl` (1.5rem / 2rem paired line-height) */
   h1 {
-    font-size: var(--text-2xl);
+    font-size: 24px;
+    line-height: 32px;
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    color: var(--dark-100);
   }
 
   h2 {

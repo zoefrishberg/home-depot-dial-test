@@ -7,7 +7,8 @@ interface IntroProps {
 
 export function DialTestIntro({ onContinue }: IntroProps) {
   return (
-    <div className="min-h-screen bg-[#E8E8E8] flex flex-col">
+    <div className="min-h-screen bg-[#E8E8E8] flex justify-center">
+      <div className="w-full max-w-2xl min-h-screen flex flex-col border-x border-gray-300">
       {/* Header */}
       <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -30,7 +31,7 @@ export function DialTestIntro({ onContinue }: IntroProps) {
       {/* Main Content */}
       <main className="flex-1 px-4 py-6 overflow-y-auto">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl font-bold text-[#3D3D3D] mb-6">
+          <h1 className="mb-6">
             Your Opinion Matters!
           </h1>
 
@@ -74,7 +75,7 @@ export function DialTestIntro({ onContinue }: IntroProps) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#E8E8E8] px-4 py-6 border-t border-gray-300">
+      <footer className="bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-center gap-2 mb-4 text-gray-500 text-sm">
             <Lock className="w-4 h-4" />
@@ -105,6 +106,7 @@ export function DialTestIntro({ onContinue }: IntroProps) {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

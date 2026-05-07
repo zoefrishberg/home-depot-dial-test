@@ -248,7 +248,8 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, progre
   const faderPosition = 7.8125 + ((50 - (intensity / 2)) * 0.84375);
 
   return (
-    <div className="min-h-[100vh] bg-black flex flex-col">
+    <div className="min-h-[100vh] bg-black flex justify-center">
+      <div className="w-full max-w-2xl min-h-[100vh] flex flex-col border-x border-gray-300 relative">
       {/* Header - More Compact */}
       <header className="bg-[#313131] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-30">
         <div className="flex items-center gap-2">
@@ -612,7 +613,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, progre
 
       {/* Footer - slides in/out based on touch state */}
       <footer
-        className={`bg-[#E0E0E0] px-4 py-3 border-t border-[rgba(0,0,0,0.08)] fixed bottom-0 left-0 right-0 transition-transform duration-300 ease-in-out ${
+        className={`bg-[#E0E0E0] px-4 py-3 border-t border-[rgba(0,0,0,0.08)] absolute bottom-0 left-0 right-0 transition-transform duration-300 ease-in-out ${
           isTouching && !hasEnded ? 'translate-y-full' : 'translate-y-0'
         }`}
       >
@@ -636,6 +637,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, progre
           </Button>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

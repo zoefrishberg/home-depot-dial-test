@@ -224,7 +224,8 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
   const faderPosition = 50 - (intensity / 2); // Map -100..100 to 100%..0%
 
   return (
-    <div className="min-h-[100dvh] bg-black flex flex-col">
+    <div className="min-h-[100dvh] bg-black flex justify-center">
+      <div className="w-full max-w-2xl min-h-[100dvh] flex flex-col border-x border-gray-300">
       {/* Header - More Compact */}
       <header className="bg-[#3D3D3D] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-20">
         <div className="flex items-center gap-2">
@@ -526,6 +527,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }
