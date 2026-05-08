@@ -6,10 +6,11 @@ import { saveDialData } from "../../utils/api";
 interface TutorialProps {
   sessionId: string | null;
   onComplete: () => void;
+  onBack: () => void;
   progress: number;
 }
 
-export function DialTestTutorialSlider({ sessionId, onComplete, progress }: TutorialProps) {
+export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress }: TutorialProps) {
   const [intensity, setIntensity] = useState(0); // -100 to 100
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTouching, setIsTouching] = useState(false);
@@ -224,7 +225,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
   const faderPosition = 50 - (intensity / 2); // Map -100..100 to 100%..0%
 
   return (
-    <div className="min-h-[100dvh] bg-black flex justify-center">
+    <div className="min-h-[100dvh] bg-[#E8E8E8] flex justify-center">
       <div className="w-full max-w-2xl min-h-[100dvh] flex flex-col border-x border-gray-300">
       {/* Header - More Compact */}
       <header className="bg-[#3D3D3D] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-20">
@@ -502,20 +503,18 @@ export function DialTestTutorialSlider({ sessionId, onComplete, progress }: Tuto
       {/* Footer */}
       <footer ref={footerRef} className="bg-[#E8E8E8] px-4 py-4 border-t border-gray-300">
         <div className="max-w-2xl mx-auto">
+          {currentTime < tutorialDuration && (
+            <div className="flex items-center justify-center mb-4 text-gray-500 text-sm">
+              <span>Please complete the tutorial to continue</span>
+            </div>
+          )}
           <div className="flex gap-3">
             <Button
               variant="outline"
               className="flex-1 bg-[#C8C8C8] hover:bg-[#B8B8B8] text-[#3D3D3D] border-0 h-12"
-              onClick={() => {
-                setIsPlaying(false);
-                setCurrentTime(0);
-                setDataPoints([]);
-                setHasStarted(false);
-                setIntensity(0);
-                setIsTouching(false);
-              }}
+              onClick={onBack}
             >
-              Restart
+              Back
             </Button>
             <Button
               onClick={handleContinue}

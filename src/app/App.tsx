@@ -251,9 +251,26 @@ export default function App() {
         />
       );
     case "tutorial":
-      return <DialTestTutorialSlider sessionId={sessionId} testMode={testMode} onComplete={handleTutorialComplete} progress={65} />;
-    case "dialTest":
-      return <DialTestSlider sessionId={sessionId} testMode={testMode} onComplete={handleDialTestComplete} progress={80} />;
+      return (
+        <DialTestTutorialSlider
+          sessionId={sessionId}
+          onComplete={handleTutorialComplete}
+          onBack={() => setStep("handSelection")}
+          progress={65}
+        />
+      );
+    case "dialTest": {
+      const skipTutorial = new URLSearchParams(window.location.search).get("skipTutorial") === "true";
+      return (
+        <DialTestSlider
+          sessionId={sessionId}
+          testMode={testMode}
+          onComplete={handleDialTestComplete}
+          onBack={() => setStep(skipTutorial ? "handSelection" : "tutorial")}
+          progress={80}
+        />
+      );
+    }
     case "feedback":
       return (
         <FeedbackTypeform

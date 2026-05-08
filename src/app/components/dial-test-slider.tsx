@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Gift, Volume2, Play, MoveHorizontal } from "lucide-react";
+import { Gift, Volume2, Play } from "lucide-react";
 import { saveDialData, recordPageCompletion } from "../../utils/api";
 import { DIAL_TEST_VIDEO_SRC } from "../constants";
 
@@ -13,10 +13,11 @@ interface DialTestSliderProps {
   sessionId: string | null;
   testMode?: boolean;
   onComplete?: () => void;
+  onBack: () => void;
   progress: number;
 }
 
-export function DialTestSlider({ sessionId, testMode = false, onComplete, progress }: DialTestSliderProps) {
+export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack, progress }: DialTestSliderProps) {
   const [intensity, setIntensity] = useState(0); // -100 to 100
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTouching, setIsTouching] = useState(false);
@@ -47,13 +48,6 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, progre
       setSliderSide(savedSide);
     }
   }, []);
-
-  // Toggle slider side and save to localStorage
-  const toggleSliderSide = () => {
-    const newSide = sliderSide === 'right' ? 'left' : 'right';
-    setSliderSide(newSide);
-    localStorage.setItem('sliderSide', newSide);
-  };
 
   // Video event handlers
   const handlePause = () => setIsPlaying(false);
@@ -248,7 +242,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, progre
   const faderPosition = 7.8125 + ((50 - (intensity / 2)) * 0.84375);
 
   return (
-    <div className="min-h-[100vh] bg-black flex justify-center">
+    <div className="min-h-[100vh] bg-[#E8E8E8] flex justify-center">
       <div className="w-full max-w-2xl min-h-[100vh] flex flex-col border-x border-gray-300 relative">
       {/* Header - More Compact */}
       <header className="bg-[#313131] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-30">
@@ -360,8 +354,8 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, progre
 
         {/* New Histogram Card - Full width at bottom */}
         <div
-          className={`fixed left-0 right-0 z-10 transition-all duration-300 ease-in-out ${
-            isTouching && !hasEnded ? 'bottom-0' : 'bottom-16'
+          className={`absolute left-0 right-0 z-10 transition-all duration-300 ease-in-out select-none pointer-events-none ${
+            isTouching && !hasEnded ? 'bottom-0' : 'bottom-[89px]'
           }`}
         >
           <div className="bg-[rgba(0,0,0,0.4)] h-42 landscape:h-26 px-3 landscape:px-16 py-1 relative">
@@ -427,7 +421,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, progre
         </div>
 
         {/* Vertical Slider Overlay - Dynamic Side with Toggle Button */}
-        <div className={`fixed ${sliderSide === 'right' ? 'right-4' : 'left-4'} bottom-32 landscape:bottom-4 z-20 flex flex-col items-center gap-4`}>
+        <div className={`absolute ${sliderSide === 'right' ? 'right-4' : 'left-4'} bottom-[105px] z-20 flex flex-col items-center gap-4`}>
           <div
             className="relative h-64 max-h-[calc(100vh-180px)] landscape:max-h-[calc(100vh-140px)] flex items-center select-none"
             style={{
@@ -600,41 +594,32 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, progre
             </div>
           </div>
 
-          {/* Toggle Button - Below Slider */}
-          <button
-            onClick={toggleSliderSide}
-            className="bg-white hover:bg-gray-50 rounded-full p-2.5 shadow-[0px_2px_4px_0px_rgba(0,0,0,0.16)] transition-all pointer-events-auto"
-            title={`Switch to ${sliderSide === 'right' ? 'left' : 'right'} hand`}
-          >
-            <MoveHorizontal className="w-4 h-4 text-gray-600" />
-          </button>
         </div>
       </main>
 
-      {/* Footer - slides in/out based on touch state */}
+      {/* Footer - slides out while the user is dragging the slider */}
       <footer
-        className={`bg-[#E0E0E0] px-4 py-3 border-t border-[rgba(0,0,0,0.08)] absolute bottom-0 left-0 right-0 transition-transform duration-300 ease-in-out ${
+        className={`bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300 absolute bottom-0 left-0 right-0 transition-transform duration-300 ease-in-out ${
           isTouching && !hasEnded ? 'translate-y-full' : 'translate-y-0'
         }`}
       >
-        <div className="max-w-2xl mx-auto flex gap-3">
-          <Button
-            onClick={() => window.history.back()}
-            className="h-10 px-3 bg-[rgba(0,0,0,0.08)] hover:bg-[rgba(0,0,0,0.12)] text-[rgba(0,0,0,0.8)] border-0 rounded-xl font-medium text-sm"
-          >
-            Back
-          </Button>
-          <Button
-            onClick={handleContinue}
-            disabled={!hasEnded}
-            className={`flex-1 h-10 border-0 rounded-xl font-medium text-sm transition-colors ${
-              hasEnded
-                ? 'bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white cursor-pointer'
-                : 'bg-[rgba(0,0,0,0.4)] text-white cursor-not-allowed opacity-50'
-            }`}
-          >
-            Continue
-          </Button>
+        <div className="max-w-2xl mx-auto">
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={onBack}
+              className="flex-1 bg-[#C8C8C8] hover:bg-[#B8B8B8] text-[#3D3D3D] border-0 h-12"
+            >
+              Back
+            </Button>
+            <Button
+              onClick={handleContinue}
+              disabled={!hasEnded}
+              className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:bg-[var(--dark-40)] disabled:opacity-100 disabled:cursor-not-allowed"
+            >
+              Continue
+            </Button>
+          </div>
         </div>
       </footer>
       </div>
