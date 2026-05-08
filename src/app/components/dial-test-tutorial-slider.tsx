@@ -231,8 +231,8 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
   const tooltipText = getTooltipText();
 
   return (
-    <div className="min-h-[100vh] bg-[#E8E8E8] flex justify-center">
-      <div className="w-full max-w-2xl min-h-[100vh] flex flex-col min-[672px]:border-x min-[672px]:border-gray-300 relative">
+    <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
+      <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300 relative">
         <header className="bg-[#313131] px-3 py-2 flex items-center justify-between flex-shrink-0 sticky top-0 z-30">
           <NelSurveysLogo size="sm" />
           <div className="flex items-center gap-2">
@@ -336,7 +336,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
           {/* Vertical slider overlay — handedness-respecting position */}
           <div className={`absolute ${sliderSide === 'right' ? 'right-4' : 'left-4'} bottom-4 z-20 flex flex-col items-center gap-4`}>
             <div
-              className="relative h-64 max-h-[calc(100vh-180px)] landscape:max-h-[calc(100vh-140px)] flex items-center select-none"
+              className="relative h-64 max-h-[calc(100dvh-180px)] landscape:max-h-[calc(100dvh-140px)] flex items-center select-none"
               style={{
                 WebkitUserSelect: 'none',
                 WebkitTouchCallout: 'none',

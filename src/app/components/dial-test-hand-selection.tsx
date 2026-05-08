@@ -37,8 +37,8 @@ export function DialTestHandSelection({
   };
 
   return (
-    <div className="min-h-screen bg-[#E8E8E8] flex justify-center">
-      <div className="w-full max-w-2xl min-h-screen flex flex-col min-[672px]:border-x min-[672px]:border-gray-300">
+    <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
+      <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300">
       <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between sticky top-0 z-30">
         <NelSurveysLogo />
         <div className="flex items-center gap-3">
