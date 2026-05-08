@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, type PointerEvent as ReactPointerEvent } from "react";
 import { Button } from "./ui/button";
 import { Gift, Volume2, Play } from "lucide-react";
 import { saveDialData, recordPageCompletion } from "../../utils/api";
@@ -32,7 +32,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
-  const recordingInterval = useRef<NodeJS.Timeout | null>(null);
+  const recordingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const intensityRef = useRef(0);
 
   const VIDEO_SRC = DIAL_TEST_VIDEO_SRC;
@@ -125,7 +125,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
     };
   }, [isPlaying, isTouching]);
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!sliderRef.current) return;
 
     // Only update if we have pointer capture (actively dragging)
@@ -141,7 +141,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
     setIntensity(newIntensity);
   };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
     setIsTouching(true);
 
@@ -155,7 +155,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
     }
   };
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
     e.currentTarget.releasePointerCapture(e.pointerId);
     setIsTouching(false);
   };
