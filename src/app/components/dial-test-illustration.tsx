@@ -66,6 +66,16 @@ export function DialTestIllustration({ side, className }: DialTestIllustrationPr
             100% { transform: translateX(0); opacity: 0; }
           }
           
+          @keyframes ecg-sweep {
+            0%, 12% { transform: translateX(0); }
+            80%, 100% { transform: translateX(-200px); }
+          }
+          
+          @keyframes ecg-opacity {
+            0%, 80% { opacity: 1; }
+            85%, 100% { opacity: 0; }
+          }
+          
           .motion-frame .anim-fader {
             animation: fader-move var(--cycle) infinite cubic-bezier(0.4, 0, 0.2, 1);
           }
@@ -75,31 +85,31 @@ export function DialTestIllustration({ side, className }: DialTestIllustrationPr
           .motion-frame .anim-playhead {
             animation: playhead-sweep var(--cycle) infinite linear;
           }
+          .anim-ecg {
+            animation: ecg-sweep var(--cycle) infinite linear;
+          }
+          .motion-frame .anim-ecg-opacity {
+            animation: ecg-opacity var(--cycle) infinite linear;
+          }
         `}</style>
         <linearGradient id="slider-gradient" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#29A347" />
           <stop offset="50%" stopColor="#E8E8E8" />
           <stop offset="100%" stopColor="#B8392E" />
         </linearGradient>
+        <clipPath id="wave-clip">
+          <rect x="0" y="0" width="291" height="213" />
+        </clipPath>
+        <linearGradient id="ecg-fade-mask-grad" x1="200" y1="0" x2="291" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="black" />
+          <stop offset="100%" stopColor="white" />
+        </linearGradient>
+        <mask id="fade-mask">
+          <rect x="0" y="0" width="340" height="213" fill="url(#ecg-fade-mask-grad)" />
+        </mask>
       </defs>
 
       <g className="dial-test-anim">
-        {/* Play Icon */}
-        <svg
-          x={playIconX}
-          y="82.5"
-          width="48"
-          height="48"
-          viewBox="0 0 24 24"
-          fill="#3D3D3D"
-          stroke="#3D3D3D"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M5 3l14 9-14 9V3z" />
-        </svg>
-
         {/* Progress Line */}
         <rect x={progressX} y="196" width="256" height="2" rx="1" fill="#A3A3A3" />
 
@@ -108,6 +118,25 @@ export function DialTestIllustration({ side, className }: DialTestIllustrationPr
           <circle cx={progressX} cy="197" r="6" fill="#A3A3A3" className="anim-playhead" />
           
           <g transform={sliderGroupTransform}>
+            {/* ECG Wave - Only show when slider is on the right */}
+            <g style={{ visibility: isLeft ? "hidden" : "visible" }}>
+              <g clipPath="url(#wave-clip)" className="anim-ecg-opacity">
+                <g mask="url(#fade-mask)">
+                  <g className="anim-ecg">
+                    <path
+                      d="M 291 106.5 C 312.2 106.5, 301.6 60.5, 343.9 60.5 L 361.6 60.5 C 387.5 60.5, 374.5 152.5, 426.3 152.5 L 443.9 152.5 C 462.7 152.5, 453.3 106.5, 491 106.5"
+                      fill="none"
+                      stroke="#A3A3A3"
+                      strokeOpacity="0.6"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </g>
+                </g>
+              </g>
+            </g>
+
             {/* Rail */}
             <rect x="300" y="12" width="28" height="189" rx="14" fill="url(#slider-gradient)" />
             
@@ -148,6 +177,22 @@ export function DialTestIllustration({ side, className }: DialTestIllustrationPr
             </g>
           </g>
         </g>
+
+        {/* Play Icon */}
+        <svg
+          x={playIconX}
+          y="82.5"
+          width="48"
+          height="48"
+          viewBox="0 0 24 24"
+          fill="#3D3D3D"
+          stroke="#3D3D3D"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M5 3l14 9-14 9V3z" />
+        </svg>
       </g>
     </svg>
   );
