@@ -1,6 +1,7 @@
 import { Button } from "./ui/button";
-import { Gift, Play, Pointer } from "lucide-react";
+import { Gift } from "lucide-react";
 import { NelSurveysLogo } from "./nel-surveys-logo";
+import { DialTestIllustration } from "./dial-test-illustration";
 
 interface DialTestHowItWorksProps {
   onComplete: () => void;
@@ -13,6 +14,8 @@ export function DialTestHowItWorks({
   onBack,
   progress,
 }: DialTestHowItWorksProps) {
+  const resolvedSide = (typeof window !== "undefined" && localStorage.getItem("sliderSide") === "left") ? "left" : "right";
+
   return (
     <div className="min-h-screen bg-[#E8E8E8] flex justify-center">
       <div className="w-full max-w-2xl min-h-screen flex flex-col min-[672px]:border-x min-[672px]:border-gray-300">
@@ -87,7 +90,7 @@ export function DialTestHowItWorks({
         </div>
 
         <div className="max-w-2xl mx-auto w-full flex justify-center">
-          <SliderIllustration />
+          <DialTestIllustration side={resolvedSide} />
         </div>
       </main>
 
@@ -111,43 +114,6 @@ export function DialTestHowItWorks({
         </div>
       </footer>
       </div>
-    </div>
-  );
-}
-
-function SliderIllustration() {
-  return (
-    <div
-      className="relative w-full aspect-[16/10] rounded-2xl border-2 border-[#3D3D3D] bg-[#E8E8E8]"
-      style={{ maxWidth: "340px" }}
-    >
-      <div className="absolute inset-0 flex items-center justify-center pr-12">
-        <Play className="w-12 h-12 text-[#3D3D3D]" fill="currentColor" />
-      </div>
-
-      <div className="absolute bottom-4 left-5 right-16 h-0.5 bg-[#3D3D3D]/40 rounded-full">
-        <div className="absolute left-1/3 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-[#3D3D3D] rounded-full" />
-      </div>
-
-      <div
-        className="absolute right-3 top-3 bottom-3 w-7 rounded-full"
-        style={{
-          background:
-            "linear-gradient(to bottom, #29A347 0%, #E8E8E8 50%, #B8392E 100%)",
-        }}
-      >
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-6 bg-white border-2 border-[#3D3D3D] rounded-md flex items-center justify-center gap-0.5">
-          <span className="block w-px h-3 bg-[#3D3D3D]" />
-          <span className="block w-px h-3 bg-[#3D3D3D]" />
-          <span className="block w-px h-3 bg-[#3D3D3D]" />
-        </div>
-      </div>
-
-      <Pointer
-        className="absolute right-0 top-1/2 w-10 h-10 text-[#3D3D3D]"
-        style={{ transform: "translate(40%, -10%) rotate(8deg)" }}
-        strokeWidth={2}
-      />
     </div>
   );
 }

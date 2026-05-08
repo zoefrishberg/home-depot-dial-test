@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { Check, Gift, Play, Pointer } from "lucide-react";
+import { Check, Gift } from "lucide-react";
 import { NelSurveysLogo } from "./nel-surveys-logo";
+import { DialTestIllustration } from "./dial-test-illustration";
 
 type HandChoice = "left" | "right";
 
@@ -65,7 +66,7 @@ export function DialTestHandSelection({
         </div>
 
         <div className="max-w-2xl mx-auto w-full flex justify-center">
-          <HandIllustration side={choice} />
+          <DialTestIllustration side={choice ?? "right"} />
         </div>
 
         <div className="max-w-2xl mx-auto w-full grid grid-cols-2 gap-3">
@@ -134,63 +135,5 @@ function ChoiceButton({ label, selected, onClick }: ChoiceButtonProps) {
         {label}
       </span>
     </button>
-  );
-}
-
-interface HandIllustrationProps {
-  side: HandChoice | null;
-}
-
-function HandIllustration({ side }: HandIllustrationProps) {
-  // Default visual matches the "no selection" state in the mock (slider + hand on right).
-  const sliderOnRight = side !== "left";
-
-  return (
-    <div
-      className="relative w-full aspect-[16/10] rounded-2xl border-2 border-[#3D3D3D] bg-[#E8E8E8]"
-      style={{ maxWidth: "340px" }}
-    >
-      <div
-        className={`absolute inset-0 flex items-center justify-center ${
-          sliderOnRight ? "pr-12" : "pl-12"
-        }`}
-      >
-        <Play className="w-12 h-12 text-[#3D3D3D]" fill="currentColor" />
-      </div>
-
-      <div
-        className={`absolute bottom-4 h-0.5 bg-[#3D3D3D]/40 rounded-full ${
-          sliderOnRight ? "left-5 right-16" : "left-16 right-5"
-        }`}
-      >
-        <div className="absolute left-1/3 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-[#3D3D3D] rounded-full" />
-      </div>
-
-      <div
-        className={`absolute top-3 bottom-3 w-7 rounded-full ${
-          sliderOnRight ? "right-3" : "left-3"
-        }`}
-        style={{
-          background:
-            "linear-gradient(to bottom, #29A347 0%, #E8E8E8 50%, #B8392E 100%)",
-        }}
-      >
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-6 bg-white border-2 border-[#3D3D3D] rounded-md flex items-center justify-center gap-0.5">
-          <span className="block w-px h-3 bg-[#3D3D3D]" />
-          <span className="block w-px h-3 bg-[#3D3D3D]" />
-          <span className="block w-px h-3 bg-[#3D3D3D]" />
-        </div>
-      </div>
-
-      <Pointer
-        className="absolute top-1/2 w-10 h-10 text-[#3D3D3D]"
-        style={{
-          ...(sliderOnRight
-            ? { right: 0, transform: "translate(40%, -10%) rotate(8deg)" }
-            : { left: 0, transform: "translate(-40%, -10%) scaleX(-1) rotate(8deg)" }),
-        }}
-        strokeWidth={2}
-      />
-    </div>
   );
 }
