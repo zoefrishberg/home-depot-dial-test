@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Gift } from "lucide-react";
 import { NelSurveysLogo } from "./nel-surveys-logo";
@@ -15,6 +16,24 @@ export function DialTestHowItWorks({
   progress,
 }: DialTestHowItWorksProps) {
   const resolvedSide = (typeof window !== "undefined" && localStorage.getItem("sliderSide") === "left") ? "left" : "right";
+
+  // Detect a likely physical keyboard. There is no direct browser API for this,
+  // so we infer from a fine pointer + hover capability (desktop-class input),
+  // and upgrade to true on the first real keydown event.
+  const [hasKeyboard, setHasKeyboard] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(any-pointer: fine) and (any-hover: hover)");
+    setHasKeyboard(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setHasKeyboard(prev => prev || e.matches);
+    const onKey = () => setHasKeyboard(true);
+    mq.addEventListener?.("change", onChange);
+    window.addEventListener("keydown", onKey, { once: true });
+    return () => {
+      mq.removeEventListener?.("change", onChange);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#E8E8E8] flex justify-center">
@@ -92,6 +111,24 @@ export function DialTestHowItWorks({
         <div className="max-w-2xl mx-auto w-full flex justify-center">
           <DialTestIllustration side={resolvedSide} />
         </div>
+
+        {hasKeyboard && (
+          <p className="max-w-2xl mx-auto w-full text-center text-sm text-[#3D3D3D]/70">
+            Prefer keyboard? Hold{" "}
+            <kbd className="inline-flex items-center justify-center rounded border border-black/15 bg-white px-1.5 py-0.5 font-mono text-xs text-[#3D3D3D] shadow-sm">
+              Space
+            </kbd>{" "}
+            to play the content, and press{" "}
+            <kbd className="inline-flex items-center justify-center rounded border border-black/15 bg-white px-1.5 py-0.5 font-mono text-xs text-[#3D3D3D] shadow-sm">
+              ↑
+            </kbd>{" "}
+            and{" "}
+            <kbd className="inline-flex items-center justify-center rounded border border-black/15 bg-white px-1.5 py-0.5 font-mono text-xs text-[#3D3D3D] shadow-sm">
+              ↓
+            </kbd>{" "}
+            to move the slider.
+          </p>
+        )}
       </main>
 
       <footer className="bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300">
