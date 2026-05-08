@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Gift, MoveHorizontal } from "lucide-react";
 import { saveDialData } from "../../utils/api";
+import { NelSurveysLogo } from "./nel-surveys-logo";
 
 interface TutorialProps {
   sessionId: string | null;
@@ -226,15 +227,10 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
 
   return (
     <div className="min-h-[100dvh] bg-[#E8E8E8] flex justify-center">
-      <div className="w-full max-w-2xl min-h-[100dvh] flex flex-col border-x border-gray-300">
+      <div className="w-full max-w-2xl min-h-[100dvh] flex flex-col min-[672px]:border-x min-[672px]:border-gray-300">
       {/* Header - More Compact */}
       <header className="bg-[#3D3D3D] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-20">
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 border-2 border-white rounded flex items-center justify-center">
-            <div className="w-2.5 h-2.5 bg-white" style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}></div>
-          </div>
-          <span className="text-white font-medium text-sm">NELSurveys</span>
-        </div>
+        <NelSurveysLogo size="sm" />
         <div className="flex items-center gap-2">
           <div className="w-16 h-1.5 bg-gray-600 rounded-full overflow-hidden">
             <div 

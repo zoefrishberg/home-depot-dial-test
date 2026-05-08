@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { Gift, Volume2, Play } from "lucide-react";
 import { saveDialData, recordPageCompletion } from "../../utils/api";
 import { DIAL_TEST_VIDEO_SRC } from "../constants";
+import { NelSurveysLogo } from "./nel-surveys-logo";
 
 interface DataPoint {
   timestamp: number;
@@ -243,15 +244,10 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
 
   return (
     <div className="min-h-[100vh] bg-[#E8E8E8] flex justify-center">
-      <div className="w-full max-w-2xl min-h-[100vh] flex flex-col border-x border-gray-300 relative">
+      <div className="w-full max-w-2xl min-h-[100vh] flex flex-col min-[672px]:border-x min-[672px]:border-gray-300 relative">
       {/* Header - More Compact */}
       <header className="bg-[#313131] px-3 py-2 flex items-center justify-between flex-shrink-0 relative z-30">
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 border-2 border-white rounded flex items-center justify-center">
-            <div className="w-2.5 h-2.5 bg-white" style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}></div>
-          </div>
-          <span className="text-white font-medium text-sm">NELSurveys</span>
-        </div>
+        <NelSurveysLogo size="sm" />
         <div className="flex items-center gap-2">
           <div className="w-16 h-1.5 bg-gray-600 rounded-full overflow-hidden">
             <div

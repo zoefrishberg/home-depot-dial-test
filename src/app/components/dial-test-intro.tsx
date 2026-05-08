@@ -1,5 +1,6 @@
 import { Button } from "./ui/button";
 import { Gift, Lock } from "lucide-react";
+import { NelSurveysLogo } from "./nel-surveys-logo";
 
 interface IntroProps {
   onContinue: () => void;
@@ -8,15 +9,10 @@ interface IntroProps {
 export function DialTestIntro({ onContinue }: IntroProps) {
   return (
     <div className="min-h-screen bg-[#E8E8E8] flex justify-center">
-      <div className="w-full max-w-2xl min-h-screen flex flex-col border-x border-gray-300">
+      <div className="w-full max-w-2xl min-h-screen flex flex-col min-[672px]:border-x min-[672px]:border-gray-300">
       {/* Header */}
       <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 border-2 border-white rounded flex items-center justify-center">
-            <div className="w-3 h-3 bg-white" style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}></div>
-          </div>
-          <span className="text-white font-medium">NELSurveys</span>
-        </div>
+        <NelSurveysLogo />
         <div className="flex items-center gap-3">
           <div className="w-20 h-2 bg-gray-600 rounded-full overflow-hidden">
             <div 
