@@ -356,9 +356,9 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
             isTouching && !hasEnded ? 'bottom-0' : 'bottom-[89px]'
           }`}
         >
-          <div className="bg-[rgba(0,0,0,0.4)] h-42 landscape:h-26 px-3 landscape:px-16 py-1 relative">
+          <div className="bg-[rgba(0,0,0,0.4)] h-42 landscape:h-26 px-20 landscape:px-24 py-1 relative">
             {/* Horizontal center line */}
-            <div className="absolute left-2 right-2 landscape:left-16 landscape:right-16 top-1/2 h-[1px] bg-[#E0E0E0] opacity-20" />
+            <div className="absolute left-20 right-20 landscape:left-24 landscape:right-24 top-1/2 h-[1px] bg-[#E0E0E0] opacity-20" />
 
             {/* ECG Curve */}
             <svg
@@ -561,7 +561,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
                 >
                   <div className="bg-white px-4 py-2 rounded-lg shadow-md border border-gray-200 whitespace-nowrap relative">
                     <p className="text-sm text-black font-medium">
-                      {!hasStartedPlaying ? 'Touch the slider to begin.' : 'Touch the slider to continue.'}
+                      {!hasStartedPlaying ? 'Hold the slider to begin.' : 'Hold the slider to continue.'}
                     </p>
                     {/* Triangle pointer */}
                     <div
