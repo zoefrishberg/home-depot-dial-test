@@ -75,9 +75,12 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
     };
   }, []);
 
-  // Tutorial clock + data recording — advances only while the user is holding.
+  // Tutorial clock + data recording — advances only while the user is holding
+  // AND the action gates are still being practiced. Once both gates are crossed
+  // we soft-freeze recording so the histogram preview shows a clean snapshot of
+  // the user's tutorial work; the slider itself remains visually responsive.
   useEffect(() => {
-    if (isTouching) {
+    if (isTouching && !gatesComplete) {
       recordingInterval.current = setInterval(() => {
         const nextClock = tutorialClockRef.current + 0.1;
         tutorialClockRef.current = nextClock;
@@ -97,7 +100,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
     return () => {
       if (recordingInterval.current) clearInterval(recordingInterval.current);
     };
-  }, [isTouching]);
+  }, [isTouching, gatesComplete]);
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!sliderRef.current) return;
@@ -246,7 +249,11 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
           </div>
         </header>
 
-        <main className="flex-1 relative overflow-hidden bg-[#E8E8E8]">
+        <main
+          className={`flex-1 relative overflow-hidden transition-colors duration-300 ease-in-out ${
+            gatesComplete ? 'bg-[#2CC353]/5' : 'bg-[#E8E8E8]'
+          }`}
+        >
           {/* Headline copy — vertically centered in the upper portion of the white area */}
           <div
             className="absolute inset-0 flex items-center justify-center px-8 pb-[168px] pointer-events-none select-none"
@@ -273,11 +280,12 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
             </div>
           </div>
 
-          {/* Bottom histogram card — hidden until both gates are crossed,
-              then fades in to preview the real test's bottom-of-screen trace. */}
+          {/* Bottom histogram card — hidden during the gate phase, and held back
+              until the user releases after gates complete so it doesn't appear
+              mid-hold. Then fades in as a preview of the real test's trace. */}
           <div
             className={`absolute left-0 right-0 bottom-0 z-10 transition-all duration-300 ease-in-out select-none pointer-events-none ${
-              gatesComplete ? 'opacity-100' : 'opacity-0'
+              gatesComplete && !isTouching ? 'opacity-100' : 'opacity-0'
             }`}
           >
             <div
@@ -356,8 +364,14 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
             </div>
           </div>
 
-          {/* Vertical slider overlay — handedness-respecting position */}
-          <div className={`absolute ${sliderSide === 'right' ? 'right-4' : 'left-4'} bottom-4 z-20 flex flex-col items-center gap-4`}>
+          {/* Vertical slider overlay — handedness-respecting position. Fades out
+              once gates are complete and the user releases, in sync with the
+              histogram fading in below. */}
+          <div
+            className={`absolute ${sliderSide === 'right' ? 'right-4' : 'left-4'} bottom-4 z-20 flex flex-col items-center gap-4 transition-all duration-300 ease-in-out ${
+              gatesComplete && !isTouching ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            }`}
+          >
             <div
               className="relative h-64 max-h-[calc(100dvh-180px)] landscape:max-h-[calc(100dvh-140px)] flex items-center select-none"
               style={{
