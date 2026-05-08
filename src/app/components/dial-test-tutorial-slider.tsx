@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, type PointerEvent as ReactPointerEvent } from "react";
+import React, { useState, useRef, useEffect, useCallback, type PointerEvent as ReactPointerEvent } from "react";
 import { Button } from "./ui/button";
 import { Gift, CheckCircle2 } from "lucide-react";
 import { saveDialData } from "../../utils/api";
