@@ -429,8 +429,8 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
             }}
             onContextMenu={(e) => e.preventDefault()}
           >
-            {/* Trailing ECG-style curve */}
-            {(() => {
+            {/* Trailing ECG-style curve - only shown when slider is on the right */}
+            {sliderSide === 'right' && (() => {
               const curveData = generateCurvePath();
               const trackH = 256; // h-64 = 256px
               const lastPoint = curveData.points.length > 0 ? curveData.points[curveData.points.length - 1] : null;
