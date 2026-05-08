@@ -273,8 +273,13 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
             </div>
           </div>
 
-          {/* Bottom histogram card — pinned just above the footer */}
-          <div className="absolute left-0 right-0 bottom-0 z-10 select-none pointer-events-none">
+          {/* Bottom histogram card — hidden until both gates are crossed,
+              then fades in to preview the real test's bottom-of-screen trace. */}
+          <div
+            className={`absolute left-0 right-0 bottom-0 z-10 transition-all duration-300 ease-in-out select-none pointer-events-none ${
+              gatesComplete ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
             <div
               className={`bg-[rgba(0,0,0,0.4)] h-42 landscape:h-26 py-1 relative ${
                 sliderSide === 'right'
@@ -309,9 +314,15 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
                   const height = 50;
                   const midY = height / 2;
 
+                  // Stretch the recorded curve to fill the full card width so the
+                  // reveal visually reads as "tutorial complete", regardless of
+                  // how long the user took to cross both gates.
+                  const lastTimestamp = dataPoints[dataPoints.length - 1].timestamp;
+                  const xScale = lastTimestamp > 0 ? lastTimestamp : TUTORIAL_X_AXIS_DURATION;
+
                   let pathData = "";
                   dataPoints.forEach((point, index) => {
-                    const x = (point.timestamp / TUTORIAL_X_AXIS_DURATION) * width;
+                    const x = (point.timestamp / xScale) * width;
                     const y = midY - (point.value / 100) * (midY - 5);
 
                     if (index === 0) {
@@ -320,7 +331,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
                       pathData += ` L ${x} ${y}`;
                     } else {
                       const prevPoint = dataPoints[index - 1];
-                      const prevX = (prevPoint.timestamp / TUTORIAL_X_AXIS_DURATION) * width;
+                      const prevX = (prevPoint.timestamp / xScale) * width;
                       const prevY = midY - (prevPoint.value / 100) * (midY - 5);
                       const controlX = (prevX + x) / 2;
                       const controlY = prevY;
