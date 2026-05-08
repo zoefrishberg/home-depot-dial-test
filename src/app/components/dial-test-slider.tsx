@@ -4,6 +4,7 @@ import { Gift, Volume2, Play } from "lucide-react";
 import { saveDialData, recordPageCompletion } from "../../utils/api";
 import { DIAL_TEST_VIDEO_SRC } from "../constants";
 import { NelSurveysLogo } from "./nel-surveys-logo";
+import { useSliderKeyboard } from "../../utils/useSliderKeyboard";
 
 interface DataPoint {
   timestamp: number;
@@ -49,6 +50,14 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
       setSliderSide(savedSide);
     }
   }, []);
+
+  // Keyboard support: hold Space to engage, ↑/↓ to move the fader.
+  // Disabled once the video has ended so trailing key presses can't restart capture.
+  useSliderKeyboard({
+    enabled: !hasEnded,
+    setIsTouching,
+    setIntensity,
+  });
 
   // Video event handlers
   const handlePause = () => setIsPlaying(false);

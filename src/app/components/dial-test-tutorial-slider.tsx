@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect, type PointerEvent as ReactPointerEvent } from "react";
+import { useState, useRef, useEffect, useCallback, type PointerEvent as ReactPointerEvent } from "react";
 import { Button } from "./ui/button";
 import { Gift, CheckCircle2 } from "lucide-react";
 import { saveDialData } from "../../utils/api";
 import { NelSurveysLogo } from "./nel-surveys-logo";
+import { useSliderKeyboard } from "../../utils/useSliderKeyboard";
 
 interface DataPoint {
   timestamp: number;
@@ -56,6 +57,17 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
       setSliderSide(savedSide);
     }
   }, []);
+
+  // Keyboard support: hold Space to engage (also marks the tutorial as
+  // touched so the headline copy advances) and ↑/↓ to move the fader.
+  const handleKeyboardTouch = useCallback((held: boolean) => {
+    setIsTouching(held);
+    if (held) setHasTouched(true);
+  }, []);
+  useSliderKeyboard({
+    setIsTouching: handleKeyboardTouch,
+    setIntensity,
+  });
 
   useEffect(() => {
     return () => {
