@@ -38,7 +38,7 @@ export default function App() {
 
   // Set document title and meta tags
   useEffect(() => {
-    document.title = "NELSurveys - Dial Test Survey";
+    document.title = "NELSurveys – Complete a survey";
 
     const setMetaTag = (name: string, content: string, property?: boolean) => {
       const attribute = property ? "property" : "name";
