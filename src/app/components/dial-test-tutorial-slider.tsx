@@ -275,8 +275,20 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
 
           {/* Bottom histogram card — pinned just above the footer */}
           <div className="absolute left-0 right-0 bottom-0 z-10 select-none pointer-events-none">
-            <div className="bg-[rgba(0,0,0,0.4)] h-42 landscape:h-26 px-20 landscape:px-24 py-1 relative">
-              <div className="absolute left-20 right-20 landscape:left-24 landscape:right-24 top-1/2 h-[1px] bg-[#E0E0E0] opacity-20" />
+            <div
+              className={`bg-[rgba(0,0,0,0.4)] h-42 landscape:h-26 py-1 relative ${
+                sliderSide === 'right'
+                  ? 'pl-4 pr-20 landscape:pr-24'
+                  : 'pl-20 pr-4 landscape:pl-24'
+              }`}
+            >
+              <div
+                className={`absolute top-1/2 h-[1px] bg-[#E0E0E0] opacity-20 ${
+                  sliderSide === 'right'
+                    ? 'left-4 right-20 landscape:right-24'
+                    : 'left-20 right-4 landscape:left-24'
+                }`}
+              />
 
               <svg
                 viewBox="0 0 297 50"
