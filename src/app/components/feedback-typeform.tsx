@@ -12,6 +12,10 @@ interface FeedbackTypeformProps {
     expressiveness: string;
     improvements: string;
     repeatIntent: string;
+    gender: string;
+    primaryShopper: string;
+    amazonFrequency: string;
+    streamingFrequency: string;
   }) => void;
   onBack: () => void;
   progressStart: number;
@@ -27,7 +31,7 @@ interface Question {
   required: boolean;
 }
 
-const OPTION_KEYS = ["A", "B", "C", "D", "E"];
+const OPTION_KEYS = ["A", "B", "C", "D", "E", "F", "G"];
 
 export function FeedbackTypeform({
   sessionId,
@@ -82,6 +86,51 @@ export function FeedbackTypeform({
       question: "Would you take another survey like this?",
       type: "single",
       options: ["Yes", "Maybe", "No"],
+      required: true,
+    },
+    {
+      id: "gender",
+      question: "What is your gender?",
+      type: "single",
+      options: ["Female", "Male", "Other"],
+      required: true,
+    },
+    {
+      id: "primaryShopper",
+      question:
+        "Are you the primary shopper for your household? (For things like groceries, clothing, and personal items)",
+      type: "single",
+      options: ["Yes", "I share this responsibility equally", "No"],
+      required: true,
+    },
+    {
+      id: "amazonFrequency",
+      question: "How often do you purchase something from Amazon?",
+      type: "single",
+      options: [
+        "Several times per week",
+        "About once per week",
+        "A few times per month",
+        "About once per month",
+        "A few times per year",
+        "Less often",
+        "Never",
+      ],
+      required: true,
+    },
+    {
+      id: "streamingFrequency",
+      question:
+        "How often do you watch TV shows or movies using streaming services (such as Netflix, Hulu, Disney+, Amazon Prime Video, or similar)?",
+      type: "single",
+      options: [
+        "Every day",
+        "Several times per week",
+        "About once per week",
+        "A few times per month",
+        "Less often",
+        "Never",
+      ],
       required: true,
     },
   ];
@@ -164,6 +213,10 @@ export function FeedbackTypeform({
       expressiveness: answers.expressiveness || "",
       improvements: answers.improvements || "",
       repeatIntent: answers.repeatIntent || "",
+      gender: answers.gender || "",
+      primaryShopper: answers.primaryShopper || "",
+      amazonFrequency: answers.amazonFrequency || "",
+      streamingFrequency: answers.streamingFrequency || "",
     });
   };
 
@@ -209,7 +262,7 @@ export function FeedbackTypeform({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col justify-center px-4 py-8 overflow-hidden">
+      <main className="flex-1 flex flex-col justify-center px-4 py-6 overflow-hidden">
         <div className="max-w-2xl mx-auto w-full">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
@@ -222,14 +275,14 @@ export function FeedbackTypeform({
               transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
               {/* Question text */}
-              <h2 className="text-xl font-semibold text-[#3D3D3D] mb-8 leading-snug">
+              <h2 className="text-xl font-semibold text-[#3D3D3D] mb-6 leading-snug">
                 {currentQuestion.question}
               </h2>
 
               {/* Options or text input */}
               {currentQuestion.type === "single" &&
                 currentQuestion.options && (
-                  <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-col gap-2">
                     {currentQuestion.options.map((option, idx) => {
                       const isSelected = currentAnswer === option;
                       return (
@@ -239,7 +292,7 @@ export function FeedbackTypeform({
                           initial={{ opacity: 0, y: 16 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.06, duration: 0.3 }}
-                          className={`w-full text-left px-4 py-3.5 rounded-lg border-2 transition-all text-sm flex items-center gap-3 ${
+                          className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all text-sm flex items-center gap-3 ${
                             isSelected
                               ? "border-[#5B9FED] bg-[#5B9FED]/10 text-[#3D3D3D]"
                               : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"

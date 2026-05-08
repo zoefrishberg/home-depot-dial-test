@@ -64,6 +64,10 @@ export async function saveFeedback(
     expressiveness: string;
     improvements: string;
     repeatIntent: string;
+    gender: string;
+    primaryShopper: string;
+    amazonFrequency: string;
+    streamingFrequency: string;
   }
 ) {
   return apiCall(`/session/${sessionId}/feedback`, {

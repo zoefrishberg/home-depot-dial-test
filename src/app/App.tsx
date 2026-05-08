@@ -184,6 +184,10 @@ export default function App() {
     expressiveness: string;
     improvements: string;
     repeatIntent: string;
+    gender: string;
+    primaryShopper: string;
+    amazonFrequency: string;
+    streamingFrequency: string;
   }) => {
     if (sessionId && !testMode) {
       try {
