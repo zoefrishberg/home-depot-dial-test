@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Gift, ChevronDown, Check, ArrowRight } from "lucide-react";
+import { Gift, Check } from "lucide-react";
 import { Button } from "./ui/button";
 
 interface FeedbackTypeformProps {
@@ -13,6 +13,8 @@ interface FeedbackTypeformProps {
     repeatIntent: string;
   }) => void;
   onBack: () => void;
+  progressStart: number;
+  progressEnd: number;
 }
 
 interface Question {
@@ -30,6 +32,8 @@ export function FeedbackTypeform({
   sessionId,
   onSubmit,
   onBack,
+  progressStart,
+  progressEnd,
 }: FeedbackTypeformProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -82,7 +86,11 @@ export function FeedbackTypeform({
   ];
 
   const currentQuestion = QUESTIONS[currentIndex];
-  const progress = ((currentIndex + 1) / QUESTIONS.length) * 100;
+  // Map question index across the [progressStart, progressEnd] range so the
+  // navbar bar continues smoothly from the previous step up to 100%.
+  const progress =
+    progressStart +
+    (currentIndex / QUESTIONS.length) * (progressEnd - progressStart);
 
   // Focus textarea when text question appears
   useEffect(() => {
@@ -207,15 +215,6 @@ export function FeedbackTypeform({
         </div>
       </header>
 
-      {/* Progress bar (thin, full-width) */}
-      <div className="h-1 bg-gray-300">
-        <motion.div
-          className="h-full bg-[#5B9FED]"
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-        />
-      </div>
-
       {/* Main Content */}
       <main className="flex-1 flex flex-col justify-center px-4 py-8 overflow-hidden">
         <div className="max-w-2xl mx-auto w-full">
@@ -229,17 +228,6 @@ export function FeedbackTypeform({
               exit="exit"
               transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
-              {/* Question number */}
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm font-medium text-[#5B9FED]">
-                  {currentIndex + 1}
-                </span>
-                <ChevronDown className="w-3 h-3 text-[#5B9FED]" />
-                <span className="text-xs text-gray-400">
-                  of {QUESTIONS.length}
-                </span>
-              </div>
-
               {/* Question text */}
               <h2 className="text-xl font-semibold text-[#3D3D3D] mb-8 leading-snug">
                 {currentQuestion.question}
@@ -341,10 +329,9 @@ export function FeedbackTypeform({
                 disabled={
                   currentQuestion.required && !currentAnswer?.trim()
                 }
-                className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:bg-[var(--dark-40)] disabled:opacity-100 disabled:cursor-not-allowed gap-2"
+                className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:bg-[var(--dark-40)] disabled:opacity-100 disabled:cursor-not-allowed"
               >
-                OK
-                <ArrowRight className="w-4 h-4" />
+                Next
               </Button>
             )}
           </div>

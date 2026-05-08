@@ -277,6 +277,8 @@ export default function App() {
           sessionId={sessionId}
           onSubmit={handleFeedbackSubmit}
           onBack={() => setStep("dialTest")}
+          progressStart={80}
+          progressEnd={100}
         />
       );
     case "complete":

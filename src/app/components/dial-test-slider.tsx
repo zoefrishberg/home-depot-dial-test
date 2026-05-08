@@ -268,7 +268,9 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
         {/* Video - Full Screen Background */}
         <video
           ref={videoRef}
-          src={VIDEO_SRC}
+          // Media-fragment hash makes the browser display the frame at 0.1s
+          // as the initial poster so the area isn't blank before play.
+          src={`${VIDEO_SRC}#t=0.1`}
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
           onPause={handlePause}
