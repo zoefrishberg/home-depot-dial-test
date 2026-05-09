@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, type PointerEvent as ReactPointerEvent } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/button";
 import { Gift, CheckCircle2, ChevronUp, ChevronDown } from "lucide-react";
 import { saveDialData } from "../../utils/api";
@@ -76,11 +77,10 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
   }, []);
 
   // Tutorial clock + data recording — advances only while the user is holding
-  // AND the action gates are still being practiced. Once both gates are crossed
-  // we soft-freeze recording so the histogram preview shows a clean snapshot of
-  // the user's tutorial work; the slider itself remains visually responsive.
+  // the slider. Continues past gatesComplete so users who keep playing with
+  // the slider after success see the histogram keep responding.
   useEffect(() => {
-    if (isTouching && !gatesComplete) {
+    if (isTouching) {
       recordingInterval.current = setInterval(() => {
         const nextClock = tutorialClockRef.current + 0.1;
         tutorialClockRef.current = nextClock;
@@ -100,7 +100,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
     return () => {
       if (recordingInterval.current) clearInterval(recordingInterval.current);
     };
-  }, [isTouching, gatesComplete]);
+  }, [isTouching]);
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!sliderRef.current) return;
@@ -169,51 +169,36 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
     return { pathD: pathData, areaD: areaData, points };
   };
 
+  // Headline is the primary communicator. It does NOT depend on isTouching —
+  // pause is signaled by the chevron freeze and the tooltip, never by mutating
+  // the headline into a scolding "Paused." state. Chevrons own the directional
+  // mechanic, so copy stays short and conversational and never says
+  // "all the way" (the gate is backstage detection, not a foreground goal).
   const getHeadlineCopy = () => {
     if (gatesComplete) {
       return {
         title: "You're ready.",
-        body: "Tap Continue to start the real video.",
+        body: "",
       };
     }
-    if (!hasTouched) {
-      return {
-        title: "Let's practice first.",
-        body: "Slide up when something feels positive, and down when something feels negative.",
-      };
-    }
-    if (!isTouching) {
-      return {
-        title: "Paused.",
-        body: "Hold the slider to continue practicing.",
-      };
-    }
-    if (!hasReachedUpper && !hasReachedLower) {
-      return {
-        title: "Keep your finger on the slider.",
-        body: "Try sliding all the way up to feel the positive end.",
-      };
-    }
-    if (hasReachedUpper && !hasReachedLower) {
+    if (hasReachedUpper !== hasReachedLower) {
       return {
         title: "Now try the other direction.",
-        body: "Slide all the way down to feel the negative end.",
+        body: "",
       };
     }
     return {
-      title: "Now try the other direction.",
-      body: "Slide all the way up to feel the positive end.",
+      title: "Let's warm up first.",
+      body: "Slide up when you feel positive, down when negative.",
     };
   };
 
-  const getTooltipText = () => {
-    if (gatesComplete) return "You're ready. Tap Continue.";
-    if (!hasTouched) return "Hold the slider to begin.";
-    if (!isTouching) return "Paused — hold the slider to continue.";
-    if (!hasReachedUpper && !hasReachedLower) return "Slide up for positive, down for negative.";
-    if (hasReachedUpper && !hasReachedLower) return "Now try sliding down.";
-    return "Now try sliding up.";
-  };
+  // Tooltip lives only as a paused-state signal: it appears when the user
+  // has engaged once and then released without completing. Pre-touch and
+  // active-practice states surface no tooltip — the headline + chevrons
+  // carry everything. The actual `showPauseTooltip` boolean is computed
+  // below using `effectivelyPaused` (post-grace) instead of raw `!isTouching`,
+  // so a slipped finger doesn't immediately flip the tooltip on.
 
   const handleContinue = async () => {
     if (sessionId && recordedDataPoints.length > 0) {
@@ -230,8 +215,69 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
   // Map -100..100 to constrained range 7.8125%-92.1875% to align handle with slider edges
   const faderPosition = 7.8125 + ((50 - (intensity / 2)) * 0.84375);
 
-  const headline = getHeadlineCopy();
-  const tooltipText = getTooltipText();
+  // Pause grace — a brief release shouldn't punish the user with a full
+  // pause UI flip. Only after `isTouching` has been false for ~300ms do we
+  // treat the practice as actually paused (chevrons dim/freeze, tooltip
+  // appears). Re-engaging within the grace window cancels the pending
+  // pause and keeps the active state intact.
+  const PAUSE_GRACE_MS = 300;
+  const [effectivelyPaused, setEffectivelyPaused] = useState(false);
+  const pauseGraceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!hasTouched || isTouching) {
+      if (pauseGraceTimerRef.current) {
+        clearTimeout(pauseGraceTimerRef.current);
+        pauseGraceTimerRef.current = null;
+      }
+      setEffectivelyPaused(false);
+      return;
+    }
+    if (pauseGraceTimerRef.current) clearTimeout(pauseGraceTimerRef.current);
+    pauseGraceTimerRef.current = setTimeout(() => {
+      setEffectivelyPaused(true);
+      pauseGraceTimerRef.current = null;
+    }, PAUSE_GRACE_MS);
+    return () => {
+      if (pauseGraceTimerRef.current) {
+        clearTimeout(pauseGraceTimerRef.current);
+        pauseGraceTimerRef.current = null;
+      }
+    };
+  }, [isTouching, hasTouched]);
+
+  // Headline dwell — once the displayed headline updates, hold it for at
+  // least HEADLINE_DWELL_MS before the next change can land. Prevents copy
+  // snapping faster than the user can read on fast crossings (e.g. keyboard
+  // user swinging from +100 to -100 in <500ms).
+  const HEADLINE_DWELL_MS = 400;
+  const targetHeadline = getHeadlineCopy();
+  const [displayedHeadline, setDisplayedHeadline] = useState(targetHeadline);
+  const lastHeadlineChangeRef = useRef(0);
+  const headlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (
+      targetHeadline.title === displayedHeadline.title &&
+      targetHeadline.body === displayedHeadline.body
+    ) {
+      return;
+    }
+    const elapsed = Date.now() - lastHeadlineChangeRef.current;
+    const dwellRemaining = Math.max(0, HEADLINE_DWELL_MS - elapsed);
+    if (headlineTimerRef.current) clearTimeout(headlineTimerRef.current);
+    headlineTimerRef.current = setTimeout(() => {
+      setDisplayedHeadline(targetHeadline);
+      lastHeadlineChangeRef.current = Date.now();
+      headlineTimerRef.current = null;
+    }, dwellRemaining);
+    return () => {
+      if (headlineTimerRef.current) {
+        clearTimeout(headlineTimerRef.current);
+        headlineTimerRef.current = null;
+      }
+    };
+  }, [targetHeadline.title, targetHeadline.body, displayedHeadline.title, displayedHeadline.body]);
+
+  const showPauseTooltip = effectivelyPaused && !gatesComplete;
 
   return (
     <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
@@ -270,23 +316,33 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
                   strokeWidth={2}
                 />
               )}
-              <h1 className="text-[#3D3D3D]">{headline.title}</h1>
-              <p
-                className="mt-3 text-[#3D3D3D]/80 font-medium"
-                style={{ fontSize: "18px", lineHeight: "26px" }}
-              >
-                {headline.body}
-              </p>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={displayedHeadline.title}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                >
+                  <h1 className="text-[#3D3D3D] text-pretty">{displayedHeadline.title}</h1>
+                  {displayedHeadline.body && (
+                    <p
+                      className="mt-3 text-[#3D3D3D]/80 font-medium text-pretty"
+                      style={{ fontSize: "18px", lineHeight: "26px" }}
+                    >
+                      {displayedHeadline.body}
+                    </p>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
 
-          {/* Bottom histogram card — hidden during the gate phase, and held back
-              until the user releases after gates complete so it doesn't appear
-              mid-hold. Then fades in as a preview of the real test's trace. */}
+          {/* Bottom histogram card — always visible. Empty (just the dashed
+              midline) until the user touches; the curve draws in real-time as
+              they practice, providing continuous cause→effect feedback. */}
           <div
-            className={`absolute left-0 right-0 bottom-0 z-10 transition-all duration-300 ease-in-out select-none pointer-events-none ${
-              gatesComplete && !isTouching ? 'opacity-100' : 'opacity-0'
-            }`}
+            className="absolute left-0 right-0 bottom-0 z-10 select-none pointer-events-none"
           >
             <div
               className={`bg-[rgba(0,0,0,0.4)] h-42 landscape:h-26 py-1 relative ${
@@ -364,13 +420,12 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
             </div>
           </div>
 
-          {/* Vertical slider overlay — handedness-respecting position. Fades out
-              once gates are complete and the user releases, in sync with the
-              histogram fading in below. */}
+          {/* Vertical slider overlay — handedness-respecting position. Stays
+              visible and active throughout, including after gates complete,
+              so users can keep playing with it while the histogram below
+              continues to record their movement. */}
           <div
-            className={`absolute ${sliderSide === 'right' ? 'right-4' : 'left-4'} bottom-4 z-20 flex flex-col items-center gap-4 transition-all duration-300 ease-in-out ${
-              gatesComplete && !isTouching ? 'opacity-0 pointer-events-none' : 'opacity-100'
-            }`}
+            className={`absolute ${sliderSide === 'right' ? 'right-4' : 'left-4'} bottom-4 z-20 flex flex-col items-center gap-4`}
           >
             <div
               className="relative h-64 max-h-[calc(100dvh-180px)] landscape:max-h-[calc(100dvh-140px)] flex items-center select-none"
@@ -499,7 +554,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
                   className={`absolute inset-x-0 top-0 h-1/2 flex flex-col items-center justify-center gap-1 pointer-events-none ${
                     hasReachedUpper
                       ? 'tutorial-chevron-stack--settled'
-                      : (hasTouched && !isTouching)
+                      : effectivelyPaused
                         ? 'tutorial-chevron-stack--paused'
                         : 'tutorial-chevron-stack--active'
                   }`}
@@ -513,7 +568,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
                   className={`absolute inset-x-0 bottom-0 h-1/2 flex flex-col items-center justify-center gap-1 pointer-events-none ${
                     hasReachedLower
                       ? 'tutorial-chevron-stack--settled'
-                      : (hasTouched && !isTouching)
+                      : effectivelyPaused
                         ? 'tutorial-chevron-stack--paused'
                         : 'tutorial-chevron-stack--active'
                   }`}
@@ -523,28 +578,42 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
                   <ChevronDown size={18} strokeWidth={2.5} className="text-white tutorial-chevron tutorial-chevron--3" />
                 </div>
 
-                {/* Tooltip — single guide that drives the entire practice */}
+                {/* Pause tooltip — only surfaces when the user has engaged
+                    once and then released without completing. Pre-touch and
+                    active practice states use the headline + chevrons. */}
                 <div
                   className={`absolute ${
                     sliderSide === 'right' ? 'right-full mr-6' : 'left-full ml-6'
-                  } pointer-events-none ${!hasTouched ? 'animate-pulse' : ''}`}
+                  } pointer-events-none`}
                   style={{
                     top: `${faderPosition}%`,
                     transform: 'translateY(-50%)',
                   }}
                 >
-                  <div className="bg-white px-4 py-2 rounded-lg shadow-md border border-gray-200 whitespace-nowrap relative">
-                    <p className="text-sm text-black font-medium">
-                      {tooltipText}
-                    </p>
-                    <div
-                      className={`absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-white border-gray-200 ${
-                        sliderSide === 'right'
-                          ? 'right-[-4px] border-r border-b rotate-[-45deg]'
-                          : 'left-[-4px] border-l border-t rotate-[-45deg]'
-                      }`}
-                    />
-                  </div>
+                  <AnimatePresence>
+                    {showPauseTooltip && (
+                      <motion.div
+                        key="pause-tooltip"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.16, ease: "easeOut" }}
+                      >
+                        <div className="bg-white px-4 py-2 rounded-lg shadow-md border border-gray-200 whitespace-nowrap relative">
+                          <p className="text-sm text-black font-medium">
+                            Hold the slider to continue.
+                          </p>
+                          <div
+                            className={`absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-white border-gray-200 ${
+                              sliderSide === 'right'
+                                ? 'right-[-4px] border-r border-b rotate-[-45deg]'
+                                : 'left-[-4px] border-l border-t rotate-[-45deg]'
+                            }`}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* Fader handle */}

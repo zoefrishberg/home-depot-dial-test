@@ -102,7 +102,7 @@ export function DialTestHandSelection({
                   : "bg-[#9C9C9C] text-white cursor-not-allowed opacity-70"
               }`}
             >
-              Continue
+              Start Practice
             </Button>
           </div>
         </div>
