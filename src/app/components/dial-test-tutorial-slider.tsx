@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, type PointerEvent as ReactPointerEvent } from "react";
 import { Button } from "./ui/button";
-import { Gift, CheckCircle2 } from "lucide-react";
+import { Gift, CheckCircle2, ChevronUp, ChevronDown } from "lucide-react";
 import { saveDialData } from "../../utils/api";
 import { NelSurveysLogo } from "./nel-surveys-logo";
 import { useSliderKeyboard } from "../../utils/useSliderKeyboard";
@@ -491,6 +491,38 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
                   background: 'linear-gradient(180deg, #2CC353 0%, #FFFFFF 50%, #EB5547 100%)',
                 }}
               >
+                {/* Chevron pulse — non-verbal "you can move this up/down" cue.
+                    Each stack settles permanently when its gate is crossed,
+                    freezes-and-dims if the user releases mid-practice. */}
+                <div
+                  aria-hidden="true"
+                  className={`absolute inset-x-0 top-0 h-1/2 flex flex-col items-center justify-center gap-1 pointer-events-none ${
+                    hasReachedUpper
+                      ? 'tutorial-chevron-stack--settled'
+                      : (hasTouched && !isTouching)
+                        ? 'tutorial-chevron-stack--paused'
+                        : 'tutorial-chevron-stack--active'
+                  }`}
+                >
+                  <ChevronUp size={18} strokeWidth={2.5} className="text-white tutorial-chevron tutorial-chevron--3" />
+                  <ChevronUp size={18} strokeWidth={2.5} className="text-white tutorial-chevron tutorial-chevron--2" />
+                  <ChevronUp size={18} strokeWidth={2.5} className="text-white tutorial-chevron tutorial-chevron--1" />
+                </div>
+                <div
+                  aria-hidden="true"
+                  className={`absolute inset-x-0 bottom-0 h-1/2 flex flex-col items-center justify-center gap-1 pointer-events-none ${
+                    hasReachedLower
+                      ? 'tutorial-chevron-stack--settled'
+                      : (hasTouched && !isTouching)
+                        ? 'tutorial-chevron-stack--paused'
+                        : 'tutorial-chevron-stack--active'
+                  }`}
+                >
+                  <ChevronDown size={18} strokeWidth={2.5} className="text-white tutorial-chevron tutorial-chevron--1" />
+                  <ChevronDown size={18} strokeWidth={2.5} className="text-white tutorial-chevron tutorial-chevron--2" />
+                  <ChevronDown size={18} strokeWidth={2.5} className="text-white tutorial-chevron tutorial-chevron--3" />
+                </div>
+
                 {/* Tooltip — single guide that drives the entire practice */}
                 <div
                   className={`absolute ${

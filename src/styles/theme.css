@@ -219,4 +219,50 @@
       opacity: 0;
     }
   }
+
+  /* Tutorial slider chevron pulse — staggered opacity wave flowing outward
+     from the handle. Used by DialTestTutorialSlider to teach the up/down
+     mechanic non-verbally. Three chevrons per side, animation-delay
+     ascends from the chevron closest to the handle outward.
+     The pulse occupies the first 60% of the cycle; the remaining 40% holds
+     at rest opacity to create a clear "wait, then wave again" cadence. */
+  @keyframes tutorialChevronPulse {
+    0%, 60%, 100% {
+      opacity: 0.3;
+    }
+    30% {
+      opacity: 1;
+    }
+  }
+
+  .tutorial-chevron-stack--active .tutorial-chevron {
+    opacity: 0.3;
+    animation: tutorialChevronPulse 2s ease-in-out infinite;
+  }
+
+  /* Compound selectors here so animation-delay wins over the
+     `.tutorial-chevron-stack--active .tutorial-chevron` shorthand above
+     (which would otherwise reset delay to 0 via specificity). */
+  .tutorial-chevron-stack--active .tutorial-chevron--1 { animation-delay: 0ms; }
+  .tutorial-chevron-stack--active .tutorial-chevron--2 { animation-delay: 180ms; }
+  .tutorial-chevron-stack--active .tutorial-chevron--3 { animation-delay: 360ms; }
+
+  .tutorial-chevron-stack--settled .tutorial-chevron {
+    opacity: 0;
+    animation: none;
+    transition: opacity 240ms ease-out;
+  }
+
+  .tutorial-chevron-stack--paused .tutorial-chevron {
+    opacity: 0.35;
+    animation: none;
+    transition: opacity 200ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tutorial-chevron-stack--active .tutorial-chevron {
+      animation: none;
+      opacity: 0.55;
+    }
+  }
 }
