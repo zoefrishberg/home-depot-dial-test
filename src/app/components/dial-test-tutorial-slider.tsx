@@ -279,6 +279,12 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
 
   const showPauseTooltip = effectivelyPaused && !gatesComplete;
 
+  // Success choreography — once gatesComplete, beats land as:
+  //   +0ms   bg tint shifts (existing transition-colors on <main>)
+  //   +150ms checkmark scales/fades in above the headline
+  //   +~300ms headline crossfades to "You're ready." (driven by dwell + AnimatePresence)
+  //   +300ms helper text "Complete the tutorial..." retracts (height + opacity)
+
   return (
     <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
       <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300 relative">
@@ -310,12 +316,21 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
             }}
           >
             <div className="text-center max-w-sm">
-              {gatesComplete && (
-                <CheckCircle2
-                  className="mx-auto mb-3 w-12 h-12 text-[#2CC353]"
-                  strokeWidth={2}
-                />
-              )}
+              <AnimatePresence>
+                {gatesComplete && (
+                  <motion.div
+                    key="success-check"
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: 0.15, ease: "easeOut" }}
+                  >
+                    <CheckCircle2
+                      className="mx-auto mb-3 w-12 h-12 text-[#2CC353]"
+                      strokeWidth={2}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={displayedHeadline.title}
@@ -436,16 +451,24 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
               }}
               onContextMenu={(e) => e.preventDefault()}
             >
-              {/* Trailing ECG-style ghost histogram — only when slider is on the right */}
-              {sliderSide === 'right' && (() => {
+              {/* Trailing ECG-style ghost histogram. For right-handed users
+                  the ribbon is anchored to the slider handle (newest sample
+                  emerges adjacent to the user's finger). For left-handed
+                  users the SVG is rendered as-is (NOT mirrored), but
+                  positioned with its left edge at the body's left border;
+                  the slider sits inside the ribbon's horizontal range and
+                  layers on top via z-index. The newest sample emerges at
+                  the ribbon's right edge, ~192px from the body left border. */}
+              {(() => {
                 const curveData = generateCurvePath();
                 const trackH = 256;
                 const lastPoint = curveData.points.length > 0 ? curveData.points[curveData.points.length - 1] : null;
                 const neutralCurveColor = "#787896";
+                const ribbonAnchorClass = sliderSide === 'right' ? 'right-full mr-2' : '-left-4';
 
                 return (
                   <>
-                    <div className="absolute right-full mr-2 top-0 bottom-0 w-48 pointer-events-none overflow-visible">
+                    <div className={`absolute ${ribbonAnchorClass} top-0 bottom-0 w-48 pointer-events-none overflow-visible`}>
                       <svg
                         viewBox="0 0 200 192"
                         preserveAspectRatio="none"
@@ -514,7 +537,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
 
                     {lastPoint && isTouching && (
                       <svg
-                        className="absolute right-full top-0 w-48 pointer-events-none mr-2"
+                        className={`absolute ${ribbonAnchorClass} top-0 w-48 pointer-events-none`}
                         style={{ height: `${trackH}px` }}
                         viewBox="0 0 200 192"
                         preserveAspectRatio="none"
@@ -636,11 +659,6 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
 
         <footer className="bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300 flex-shrink-0 relative z-30">
           <div className="max-w-2xl mx-auto">
-            {!gatesComplete && (
-              <div className="flex items-center justify-center mb-3 text-gray-500 text-sm">
-                <span>Complete the tutorial to continue.</span>
-              </div>
-            )}
             <div className="flex gap-3">
               <Button
                 variant="outline"
@@ -654,7 +672,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
                 disabled={!gatesComplete}
                 className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:bg-[var(--dark-40)] disabled:opacity-100 disabled:cursor-not-allowed"
               >
-                Continue
+                Start Watching
               </Button>
             </div>
           </div>
