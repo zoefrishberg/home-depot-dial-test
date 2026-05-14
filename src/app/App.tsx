@@ -36,6 +36,25 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    window.requestAnimationFrame(() => {
+      document.querySelectorAll<HTMLElement>("#root *").forEach((element) => {
+        element.scrollTop = 0;
+        element.scrollLeft = 0;
+      });
+    });
+  }, [step]);
+
   // Set document title and meta tags
   useEffect(() => {
     document.title = "NELSurveys – Complete a survey";

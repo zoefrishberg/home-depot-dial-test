@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { Button } from "./ui/button";
 import { DialTestIllustration } from "./dial-test-illustration";
 import { ChoiceButton, type HandChoice } from "./hand-choice";
@@ -121,12 +122,12 @@ export function DialTestHowItWorks({
               Space
             </kbd>{" "}
             to play the content, and press{" "}
-            <kbd className="inline-flex items-center justify-center rounded border border-black/15 bg-white px-1.5 py-0.5 font-mono text-xs text-[#3D3D3D] shadow-sm">
-              ↑
+            <kbd className="inline-flex min-w-6 items-center justify-center rounded border border-black/15 bg-white px-1.5 py-0.5 text-base leading-none text-[#3D3D3D] shadow-sm">
+              <ArrowUp className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
             </kbd>{" "}
             and{" "}
-            <kbd className="inline-flex items-center justify-center rounded border border-black/15 bg-white px-1.5 py-0.5 font-mono text-xs text-[#3D3D3D] shadow-sm">
-              ↓
+            <kbd className="inline-flex min-w-6 items-center justify-center rounded border border-black/15 bg-white px-1.5 py-0.5 text-base leading-none text-[#3D3D3D] shadow-sm">
+              <ArrowDown className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
             </kbd>{" "}
             to move the slider.
           </p>

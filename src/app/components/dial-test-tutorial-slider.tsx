@@ -281,6 +281,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
   }, [targetHeadline.title, targetHeadline.body, displayedHeadline.title, displayedHeadline.body]);
 
   const showPauseTooltip = effectivelyPaused && !gatesComplete;
+  const shouldShowFooter = showPauseTooltip || gatesComplete;
 
   // Success choreography — once gatesComplete, beats land as:
   //   +0ms   bg tint shifts (existing transition-colors on <main>)
@@ -289,25 +290,25 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
   //   +300ms helper text "Complete the tutorial..." retracts (height + opacity)
 
   return (
-    <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
-      <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300 relative">
+    <div className="h-dvh max-h-dvh bg-[#E8E8E8] flex justify-center overflow-hidden">
+      <div className="w-full max-w-2xl h-full min-h-0 flex flex-col min-[672px]:border-x min-[672px]:border-gray-300 relative">
         <SurveyHeader progress={progress} />
 
         <main
-          className={`flex-1 relative overflow-hidden transition-colors duration-300 ease-in-out ${
+          className={`flex-1 min-h-0 relative overflow-hidden transition-colors duration-300 ease-in-out ${
             gatesComplete ? 'bg-[#2CC353]/5' : 'bg-[#E8E8E8]'
           }`}
         >
           {/* Headline copy — vertically centered in the upper portion of the white area */}
           <div
-            className="absolute inset-0 flex items-center justify-center px-8 pb-[168px] pointer-events-none select-none"
+            className="absolute inset-x-0 top-0 bottom-0 flex items-center justify-center px-8 pointer-events-none select-none"
             style={{
               WebkitUserSelect: 'none',
               WebkitTouchCallout: 'none',
               userSelect: 'none',
             }}
           >
-            <div className="text-center max-w-sm">
+            <div className="text-center max-w-sm w-full">
               <AnimatePresence>
                 {gatesComplete && (
                   <motion.div
@@ -432,7 +433,10 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
               so users can keep playing with it while the histogram below
               continues to record their movement. */}
           <div
-            className={`absolute ${sliderSide === 'right' ? 'right-4' : 'left-4'} bottom-4 z-20 flex flex-col items-center gap-4`}
+            className="fixed bottom-[105px] z-20 flex flex-col items-center gap-4"
+            style={{
+              [sliderSide === 'right' ? 'right' : 'left']: 'max(1rem, calc((100vw - 42rem) / 2 + 1rem))',
+            }}
           >
             <div
               className="relative h-64 max-h-[calc(100dvh-180px)] landscape:max-h-[calc(100dvh-140px)] flex items-center select-none"
@@ -649,26 +653,32 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
           </div>
         </main>
 
-        <footer className="bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300 flex-shrink-0 relative z-30">
-          <div className="max-w-2xl mx-auto">
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={onBack}
-                className="flex-1 bg-[#C8C8C8] hover:bg-[#B8B8B8] text-[#3D3D3D] border-0 h-12"
-              >
-                Back
-              </Button>
-              <Button
-                onClick={handleContinue}
-                disabled={!gatesComplete}
-                className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:bg-[var(--dark-40)] disabled:opacity-100 disabled:cursor-not-allowed"
-              >
-                Start Watching
-              </Button>
+        <div
+          className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out ${
+            shouldShowFooter ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <footer className="bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300 flex-shrink-0 relative z-30">
+            <div className="max-w-2xl mx-auto">
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={onBack}
+                  className="flex-1 bg-[#C8C8C8] hover:bg-[#B8B8B8] text-[#3D3D3D] border-0 h-12"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={handleContinue}
+                  disabled={!gatesComplete}
+                  className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:bg-[var(--dark-40)] disabled:opacity-100 disabled:cursor-not-allowed"
+                >
+                  Start Watching
+                </Button>
+              </div>
             </div>
-          </div>
-        </footer>
+          </footer>
+        </div>
       </div>
     </div>
   );

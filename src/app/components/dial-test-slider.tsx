@@ -251,14 +251,21 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
   // Map -100..100 to constrained range 7.8125%-92.1875% to align handle with slider edges
   const faderPosition = 7.8125 + ((50 - (intensity / 2)) * 0.84375);
   const shouldHideFooter = !hasStartedPlaying || (isTouching && !hasEnded);
+  const shouldHideHeader = isTouching && !hasEnded;
 
   return (
-    <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
-      <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300 relative">
-      <SurveyHeader progress={progress} />
+    <div className="h-dvh max-h-dvh bg-[#E8E8E8] flex justify-center overflow-hidden">
+      <div className="w-full max-w-2xl h-full min-h-0 flex flex-col min-[672px]:border-x min-[672px]:border-gray-300 relative">
+      <div
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out ${
+          shouldHideHeader ? "max-h-0 opacity-0" : "max-h-12 opacity-100"
+        }`}
+      >
+        <SurveyHeader progress={progress} />
+      </div>
 
       {/* Full-Screen Video Container */}
-      <main className="flex-1 relative overflow-hidden">
+      <main className="flex-1 min-h-0 relative overflow-hidden">
         {/* Video - Full Screen Background */}
         <video
           ref={videoRef}
@@ -349,11 +356,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
 
 
         {/* New Histogram Card - Full width at bottom */}
-        <div
-          className={`absolute left-0 right-0 z-10 transition-all duration-300 ease-in-out select-none pointer-events-none ${
-            shouldHideFooter ? 'bottom-0' : 'bottom-[89px]'
-          }`}
-        >
+        <div className="absolute left-0 right-0 bottom-0 z-10 transition-all duration-300 ease-in-out select-none pointer-events-none">
           <div
             className={`bg-[rgba(0,0,0,0.4)] h-42 landscape:h-26 py-1 relative ${
               sliderSide === 'right'
@@ -429,7 +432,12 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
         </div>
 
         {/* Vertical Slider Overlay - Dynamic Side with Toggle Button */}
-        <div className={`absolute ${sliderSide === 'right' ? 'right-4' : 'left-4'} bottom-[105px] z-20 flex flex-col items-center gap-4`}>
+        <div
+          className="fixed bottom-[105px] z-20 flex flex-col items-center gap-4"
+          style={{
+            [sliderSide === 'right' ? 'right' : 'left']: 'max(1rem, calc((100vw - 42rem) / 2 + 1rem))',
+          }}
+        >
           <div
             className="relative h-64 max-h-[calc(100dvh-180px)] landscape:max-h-[calc(100dvh-140px)] flex items-center select-none"
             style={{
@@ -605,31 +613,33 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
         </div>
       </main>
 
-      {/* Footer - slides out while the user is dragging the slider */}
-      <footer
-        className={`bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300 absolute bottom-0 left-0 right-0 transition-transform duration-300 ease-in-out ${
-          shouldHideFooter ? 'translate-y-full' : 'translate-y-0'
+      {/* Footer - collapses out of layout while the user is dragging the slider */}
+      <div
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out ${
+          shouldHideFooter ? 'max-h-0 opacity-0' : 'max-h-32 opacity-100'
         }`}
       >
-        <div className="max-w-2xl mx-auto">
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={onBack}
-              className="flex-1 bg-[#C8C8C8] hover:bg-[#B8B8B8] text-[#3D3D3D] border-0 h-12"
-            >
-              Back
-            </Button>
-            <Button
-              onClick={handleContinue}
-              disabled={!hasEnded}
-              className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:bg-[var(--dark-40)] disabled:opacity-100 disabled:cursor-not-allowed"
-            >
-              Continue
-            </Button>
+        <footer className="bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={onBack}
+                className="flex-1 bg-[#C8C8C8] hover:bg-[#B8B8B8] text-[#3D3D3D] border-0 h-12"
+              >
+                Back
+              </Button>
+              <Button
+                onClick={handleContinue}
+                disabled={!hasEnded}
+                className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:bg-[var(--dark-40)] disabled:opacity-100 disabled:cursor-not-allowed"
+              >
+                Continue
+              </Button>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
       </div>
     </div>
   );

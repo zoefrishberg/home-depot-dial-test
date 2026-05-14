@@ -20,6 +20,8 @@ export function DialTestFirstExposure({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
+  const isPlaying = hasStartedPlaying && !hasEnded;
+  const shouldShowHeadline = !hasStartedPlaying;
 
   const handleStartVideo = () => {
     if (videoRef.current) {
@@ -48,20 +50,38 @@ export function DialTestFirstExposure({
   };
 
   return (
-    <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
-      <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300">
-      <SurveyHeader progress={progress} />
+    <div className="h-dvh max-h-dvh bg-[#E8E8E8] flex justify-center overflow-hidden">
+      <div className="w-full max-w-2xl h-full min-h-0 flex flex-col min-[672px]:border-x min-[672px]:border-gray-300">
+      <div
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out ${
+          isPlaying ? "max-h-0 opacity-0" : "max-h-12 opacity-100"
+        }`}
+      >
+        <SurveyHeader progress={progress} />
+      </div>
 
-      <main className="flex-1 py-6 overflow-y-auto flex items-center">
-        <div className="max-w-2xl w-full mx-auto">
-          <h1 className="mb-6 px-4">
-            Please watch the following video with sound.
-          </h1>
+      <main
+        className={`flex-1 min-h-0 overflow-hidden transition-[padding] duration-300 ease-in-out ${
+          isPlaying ? "pt-0" : "pt-6"
+        }`}
+      >
+        <div
+          className="max-w-2xl w-full h-full min-h-0 mx-auto flex flex-col"
+        >
+          <div
+            className={`shrink-0 overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-in-out ${
+              shouldShowHeadline ? "max-h-24 opacity-100 mb-6" : "max-h-0 opacity-0 mb-0"
+            }`}
+          >
+            <h1 className="px-4">
+              Please watch the following video with sound.
+            </h1>
+          </div>
 
-          <div className="relative w-full max-h-[70vh] aspect-video bg-black overflow-hidden mx-auto">
+          <div className="relative w-full flex-1 min-h-0 overflow-hidden mx-auto">
             <video
               ref={videoRef}
-              className="absolute inset-0 w-full h-full object-contain"
+              className="absolute inset-0 w-full h-full object-contain object-center"
               src={DIAL_TEST_VIDEO_SRC}
               playsInline
               controls={false}
@@ -74,7 +94,7 @@ export function DialTestFirstExposure({
 
             {!hasStartedPlaying && (
               <div
-                className="absolute inset-0 bg-black flex flex-col items-center justify-center cursor-pointer z-20"
+                className="absolute inset-0 bg-[var(--dark-70)] flex flex-col items-center justify-center cursor-pointer z-20"
                 onClick={handleStartVideo}
               >
                 <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-6 hover:bg-white/30 transition-colors">
@@ -90,31 +110,31 @@ export function DialTestFirstExposure({
         </div>
       </main>
 
-      <footer className="bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300">
-        <div className="max-w-2xl mx-auto">
-          {!hasEnded && (
-            <div className="flex items-center justify-center mb-4 text-gray-500 text-sm">
-              <span>Please watch the entire video to continue</span>
+      <div
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out ${
+          hasEnded ? "max-h-32 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <footer className="bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300">
+            <div className="max-w-2xl mx-auto">
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={onBack}
+                  className="flex-1 bg-[#C8C8C8] hover:bg-[#B8B8B8] text-[#3D3D3D] border-0 h-12"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={onComplete}
+                  className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12"
+                >
+                  Continue
+                </Button>
+              </div>
             </div>
-          )}
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={onBack}
-              className="flex-1 bg-[#C8C8C8] hover:bg-[#B8B8B8] text-[#3D3D3D] border-0 h-12"
-            >
-              Back
-            </Button>
-            <Button
-              onClick={onComplete}
-              disabled={!hasEnded}
-              className="flex-1 bg-[var(--azure-70)] hover:bg-[var(--azure-80)] text-white border-0 h-12 disabled:bg-[var(--dark-40)] disabled:opacity-100 disabled:cursor-not-allowed"
-            >
-              Continue
-            </Button>
-          </div>
-        </div>
-      </footer>
+          </footer>
+      </div>
       </div>
     </div>
   );
