@@ -269,7 +269,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
       </header>
 
       {/* Full-Screen Video Container */}
-      <main className="flex-1 relative overflow-hidden">
+      <main className="flex-1 relative overflow-hidden bg-black">
         {/* Video - Full Screen Background */}
         <video
           ref={videoRef}
@@ -282,7 +282,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
           onEnded={handleEnded}
           playsInline
           preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-contain"
         />
 
         {/* Emotion Curve Overlay on Video - Hidden, using new histogram card instead */}
