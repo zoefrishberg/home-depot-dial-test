@@ -92,11 +92,6 @@ export function DialTestIllustration({ side, className }: DialTestIllustrationPr
             animation: ecg-opacity var(--cycle) infinite linear;
           }
         `}</style>
-        <linearGradient id="slider-gradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#29A347" />
-          <stop offset="50%" stopColor="#E8E8E8" />
-          <stop offset="100%" stopColor="#B8392E" />
-        </linearGradient>
         <clipPath id="wave-clip">
           <rect x="0" y="0" width="291" height="213" />
         </clipPath>
@@ -138,7 +133,7 @@ export function DialTestIllustration({ side, className }: DialTestIllustrationPr
             </g>
 
             {/* Rail */}
-            <rect x="300" y="12" width="28" height="189" rx="14" fill="url(#slider-gradient)" />
+            <rect x="300" y="12" width="28" height="189" rx="14" fill="#E8E8E8" stroke="#A3A3A3" strokeWidth="2" />
             
             {/* Fader */}
             <g className="anim-fader">
@@ -161,7 +156,7 @@ export function DialTestIllustration({ side, className }: DialTestIllustrationPr
           
           <g transform={sliderGroupTransform}>
             {/* Rail */}
-            <rect x="300" y="12" width="28" height="189" rx="14" fill="url(#slider-gradient)" />
+            <rect x="300" y="12" width="28" height="189" rx="14" fill="#E8E8E8" stroke="#A3A3A3" strokeWidth="2" />
             
             {/* Fader (slightly above neutral, e.g. -20px) */}
             <g transform="translate(0, -20)">
