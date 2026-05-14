@@ -32,10 +32,14 @@ export async function createSession(variant?: string, deviceInfo?: DeviceInfo, u
   });
 }
 
-export async function recordPageCompletion(sessionId: string, pageName: string) {
+export async function recordPageCompletion(
+  sessionId: string,
+  pageName: string,
+  pageData?: Record<string, unknown>
+) {
   return apiCall(`/session/${sessionId}/page`, {
     method: 'POST',
-    body: JSON.stringify({ pageName }),
+    body: JSON.stringify({ pageName, pageData }),
   });
 }
 

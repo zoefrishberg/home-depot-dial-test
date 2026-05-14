@@ -25,6 +25,13 @@ Each survey session stores the following information:
   },
   pages: {
     intro: { completed: boolean, completedAt?: string },
+    firstExposure: { completed: boolean, completedAt?: string },
+    howItWorks: { completed: boolean, completedAt?: string },
+    handSelection: {
+      completed: boolean,
+      completedAt?: string,
+      handedness?: "left" | "right"
+    },
     tutorial: { completed: boolean, completedAt?: string },
     dialTest: { completed: boolean, completedAt?: string },
     feedback: { completed: boolean, completedAt?: string }
@@ -53,6 +60,10 @@ Each survey session stores the following information:
   expressiveness: string,         // "Yes, definitely" to "Not at all"
   improvements: string,           // Open text response
   repeatIntent: string,           // "Yes", "Maybe", or "No"
+  gender: string,
+  primaryShopper: string,
+  amazonFrequency: string,
+  streamingFrequency: string,
   savedAt: string                 // ISO timestamp
 }
 ```

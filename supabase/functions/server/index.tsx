@@ -72,7 +72,7 @@ app.post("/make-server-640b0dec/session/create", async (c) => {
 app.post("/make-server-640b0dec/session/:sessionId/page", async (c) => {
   try {
     const sessionId = c.req.param("sessionId");
-    const { pageName } = await c.req.json();
+    const { pageName, pageData } = await c.req.json();
     
     const session = await kv.get(`session:${sessionId}`);
     if (!session) {
@@ -84,7 +84,8 @@ app.post("/make-server-640b0dec/session/:sessionId/page", async (c) => {
     
     session.pages[pageName] = {
       completed: true,
-      completedAt: new Date().toISOString()
+      completedAt: new Date().toISOString(),
+      ...(pageData || {}),
     };
     
     await kv.set(`session:${sessionId}`, session);

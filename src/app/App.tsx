@@ -148,7 +148,7 @@ export default function App() {
 
     if (sessionId && !testMode) {
       try {
-        await recordPageCompletion(sessionId, "handSelection");
+        await recordPageCompletion(sessionId, "handSelection", { handedness: choice });
         console.log("Hand selection page completed:", choice);
       } catch (error) {
         console.error("Failed to record hand selection completion:", error);
