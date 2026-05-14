@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Gift, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "./ui/button";
-import { NelSurveysLogo } from "./nel-surveys-logo";
+import { SurveyHeader } from "./survey-header";
 
 interface FeedbackTypeformProps {
   sessionId: string | null;
@@ -246,20 +246,7 @@ export function FeedbackTypeform({
   return (
     <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
       <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300">
-      {/* Header */}
-      <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-        <NelSurveysLogo />
-        <div className="flex items-center gap-3">
-          <div className="w-20 h-2 bg-gray-600 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-[#5B9FED]"
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-            />
-          </div>
-          <Gift className="w-5 h-5 text-white" />
-        </div>
-      </header>
+      <SurveyHeader progress={progress} animateProgress />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col justify-center px-4 py-6 overflow-hidden">

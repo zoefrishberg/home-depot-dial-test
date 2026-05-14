@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback, type PointerEvent as ReactPointerEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/button";
-import { Gift, CheckCircle2, ChevronUp, ChevronDown } from "lucide-react";
+import { CheckCircle2, ChevronUp, ChevronDown } from "lucide-react";
 import { saveDialData } from "../../utils/api";
-import { NelSurveysLogo } from "./nel-surveys-logo";
+import { SurveyHeader } from "./survey-header";
 import { useSliderKeyboard } from "../../utils/useSliderKeyboard";
 
 interface DataPoint {
@@ -291,18 +291,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
   return (
     <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
       <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300 relative">
-        <header className="bg-[#313131] px-3 py-2 flex items-center justify-between flex-shrink-0 sticky top-0 z-30">
-          <NelSurveysLogo size="sm" />
-          <div className="flex items-center gap-2">
-            <div className="w-16 h-1.5 bg-gray-600 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#5B9FED] transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <Gift className="w-4 h-4 text-white" />
-          </div>
-        </header>
+        <SurveyHeader progress={progress} />
 
         <main
           className={`flex-1 relative overflow-hidden transition-colors duration-300 ease-in-out ${

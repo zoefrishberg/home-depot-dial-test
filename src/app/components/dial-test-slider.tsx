@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, type PointerEvent as ReactPointerEvent } from "react";
 import { Button } from "./ui/button";
-import { Gift, Volume2, Play } from "lucide-react";
+import { Volume2, Play } from "lucide-react";
 import { saveDialData, recordPageCompletion } from "../../utils/api";
 import { DIAL_TEST_VIDEO_SRC } from "../constants";
-import { NelSurveysLogo } from "./nel-surveys-logo";
+import { SurveyHeader } from "./survey-header";
 import { useSliderKeyboard } from "../../utils/useSliderKeyboard";
 
 interface DataPoint {
@@ -250,26 +250,15 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
 
   // Map -100..100 to constrained range 7.8125%-92.1875% to align handle with slider edges
   const faderPosition = 7.8125 + ((50 - (intensity / 2)) * 0.84375);
+  const shouldHideFooter = !hasStartedPlaying || (isTouching && !hasEnded);
 
   return (
     <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
       <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300 relative">
-      {/* Header - More Compact */}
-      <header className="bg-[#313131] px-3 py-2 flex items-center justify-between flex-shrink-0 sticky top-0 z-30">
-        <NelSurveysLogo size="sm" />
-        <div className="flex items-center gap-2">
-          <div className="w-16 h-1.5 bg-gray-600 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#5B9FED] transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          <Gift className="w-4 h-4 text-white" />
-        </div>
-      </header>
+      <SurveyHeader progress={progress} />
 
       {/* Full-Screen Video Container */}
-      <main className="flex-1 relative overflow-hidden bg-black">
+      <main className="flex-1 relative overflow-hidden">
         {/* Video - Full Screen Background */}
         <video
           ref={videoRef}
@@ -362,7 +351,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
         {/* New Histogram Card - Full width at bottom */}
         <div
           className={`absolute left-0 right-0 z-10 transition-all duration-300 ease-in-out select-none pointer-events-none ${
-            isTouching && !hasEnded ? 'bottom-0' : 'bottom-[89px]'
+            shouldHideFooter ? 'bottom-0' : 'bottom-[89px]'
           }`}
         >
           <div
@@ -619,7 +608,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
       {/* Footer - slides out while the user is dragging the slider */}
       <footer
         className={`bg-[#E8E8E8] px-4 pt-4 pb-6 border-t border-gray-300 absolute bottom-0 left-0 right-0 transition-transform duration-300 ease-in-out ${
-          isTouching && !hasEnded ? 'translate-y-full' : 'translate-y-0'
+          shouldHideFooter ? 'translate-y-full' : 'translate-y-0'
         }`}
       >
         <div className="max-w-2xl mx-auto">

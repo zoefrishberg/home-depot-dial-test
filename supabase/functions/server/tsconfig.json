@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "jsx": "preserve",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "types": []
+  },
+  "include": ["./*.tsx", "./edge-runtime.d.ts"]
+}

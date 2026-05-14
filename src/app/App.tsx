@@ -5,7 +5,7 @@ import { DialTestIntro } from "./components/dial-test-intro";
 import { DialTestFirstExposure } from "./components/dial-test-first-exposure";
 import { DialTestHowItWorks } from "./components/dial-test-how-it-works";
 import { FeedbackTypeform } from "./components/feedback-typeform";
-import { NelSurveysLogo } from "./components/nel-surveys-logo";
+import { SurveyHeader } from "./components/survey-header";
 import type { HandChoice } from "./components/hand-choice";
 import { createSession, recordPageCompletion, saveFeedback } from "../utils/api";
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
@@ -285,14 +285,7 @@ export default function App() {
       return (
         <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
           <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300">
-          <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-            <NelSurveysLogo />
-            <div className="flex items-center gap-3">
-              <div className="w-20 h-2 bg-gray-600 rounded-full overflow-hidden">
-                <div className="h-full bg-[#5B9FED]" style={{ width: "100%" }}></div>
-              </div>
-            </div>
-          </header>
+          <SurveyHeader progress={100} showGift={false} />
           <main className="flex-1 flex items-center justify-center px-4">
             <div className="max-w-md mx-auto text-center">
               <div className="w-16 h-16 bg-[#5B9FED] rounded-full flex items-center justify-center mx-auto mb-6">

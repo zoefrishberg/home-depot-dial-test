@@ -7,7 +7,7 @@ interface NelSurveysLogoProps {
 
 export function NelSurveysLogo({ size = "md" }: NelSurveysLogoProps) {
   const iconClass = size === "sm" ? "w-4 h-4" : "w-5 h-5";
-  const textClass = size === "sm" ? "text-sm" : "";
+  const textClass = size === "sm" ? "text-sm leading-none" : "";
 
   return (
     <div className="flex items-center gap-2 text-white">

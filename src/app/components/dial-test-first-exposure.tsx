@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { Button } from "./ui/button";
-import { Gift, Play, Volume2 } from "lucide-react";
+import { Play, Volume2 } from "lucide-react";
 import { DIAL_TEST_VIDEO_SRC } from "../constants";
-import { NelSurveysLogo } from "./nel-surveys-logo";
+import { SurveyHeader } from "./survey-header";
 
 interface DialTestFirstExposureProps {
   sessionId: string | null;
@@ -50,18 +50,7 @@ export function DialTestFirstExposure({
   return (
     <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
       <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300">
-      <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-        <NelSurveysLogo />
-        <div className="flex items-center gap-3">
-          <div className="w-20 h-2 bg-gray-600 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#5B9FED] transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          <Gift className="w-5 h-5 text-white" />
-        </div>
-      </header>
+      <SurveyHeader progress={progress} />
 
       <main className="flex-1 py-6 overflow-y-auto flex items-center">
         <div className="max-w-2xl w-full mx-auto">

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { Gift } from "lucide-react";
-import { NelSurveysLogo } from "./nel-surveys-logo";
 import { DialTestIllustration } from "./dial-test-illustration";
 import { ChoiceButton, type HandChoice } from "./hand-choice";
+import { SurveyHeader } from "./survey-header";
 
 interface DialTestHowItWorksProps {
   onComplete: (choice: HandChoice) => void;
@@ -57,18 +56,7 @@ export function DialTestHowItWorks({
   return (
     <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
       <div className="w-full max-w-2xl min-h-dvh flex flex-col min-[672px]:border-x min-[672px]:border-gray-300">
-      <header className="bg-[#3D3D3D] px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-        <NelSurveysLogo />
-        <div className="flex items-center gap-3">
-          <div className="w-20 h-2 bg-gray-600 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[var(--azure-70)] transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          <Gift className="w-5 h-5 text-white" />
-        </div>
-      </header>
+      <SurveyHeader progress={progress} />
 
       <main className="flex-1 flex flex-col px-4 py-8 gap-10">
         <div className="max-w-2xl mx-auto w-full flex flex-col gap-6">
