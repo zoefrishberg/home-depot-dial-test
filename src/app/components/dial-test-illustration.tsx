@@ -22,7 +22,7 @@ export function DialTestIllustration({ side, className }: DialTestIllustrationPr
       role="img"
       aria-label="Animation showing a finger tapping a slider, dragging it up and down while a video timeline plays."
       viewBox="0 0 340 213"
-      className={`block w-full aspect-[16/10] rounded-[28px] border-[3px] border-[#A3A3A3] bg-[#F5F5F5] ${className || ""}`}
+      className={`block w-full aspect-[16/10] rounded-[28px] border-2 border-[#A3A3A3] bg-[#F5F5F5] ${className || ""}`}
       style={{ maxWidth: "340px" }}
     >
       <defs>
@@ -137,7 +137,7 @@ export function DialTestIllustration({ side, className }: DialTestIllustrationPr
             
             {/* Fader */}
             <g className="anim-fader">
-              <rect x="291" y="95.5" width="46" height="22" rx="5" fill="white" stroke="#A3A3A3" strokeWidth="1.5" />
+              <rect x="291" y="95.5" width="46" height="22" rx="5" fill="white" stroke="#A3A3A3" strokeWidth="2" />
               <rect x="308" y="102.5" width="12" height="1" fill="#A3A3A3" />
               <rect x="308" y="106" width="12" height="1" fill="#A3A3A3" />
               <rect x="308" y="109.5" width="12" height="1" fill="#A3A3A3" />
@@ -160,7 +160,7 @@ export function DialTestIllustration({ side, className }: DialTestIllustrationPr
             
             {/* Fader (slightly above neutral, e.g. -20px) */}
             <g transform="translate(0, -20)">
-              <rect x="291" y="95.5" width="46" height="22" rx="5" fill="white" stroke="#A3A3A3" strokeWidth="1.5" />
+              <rect x="291" y="95.5" width="46" height="22" rx="5" fill="white" stroke="#A3A3A3" strokeWidth="2" />
               <rect x="308" y="102.5" width="12" height="1" fill="#A3A3A3" />
               <rect x="308" y="106" width="12" height="1" fill="#A3A3A3" />
               <rect x="308" y="109.5" width="12" height="1" fill="#A3A3A3" />

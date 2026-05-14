@@ -4,13 +4,13 @@ import { DialTestTutorialSlider } from "./components/dial-test-tutorial-slider";
 import { DialTestIntro } from "./components/dial-test-intro";
 import { DialTestFirstExposure } from "./components/dial-test-first-exposure";
 import { DialTestHowItWorks } from "./components/dial-test-how-it-works";
-import { DialTestHandSelection } from "./components/dial-test-hand-selection";
 import { FeedbackTypeform } from "./components/feedback-typeform";
 import { NelSurveysLogo } from "./components/nel-surveys-logo";
+import type { HandChoice } from "./components/hand-choice";
 import { createSession, recordPageCompletion, saveFeedback } from "../utils/api";
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
-type AppStep = "intro" | "firstExposure" | "howItWorks" | "handSelection" | "tutorial" | "dialTest" | "feedback" | "complete";
+type AppStep = "intro" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "feedback" | "complete";
 
 // Variant is fixed to "slider"; kept as a constant so the backend continues to
 // receive a value in the same shape it expects.
@@ -128,7 +128,7 @@ export default function App() {
     setStep("howItWorks");
   };
 
-  const handleHowItWorksComplete = async () => {
+  const handleHowItWorksComplete = async (choice: HandChoice) => {
     if (sessionId && !testMode) {
       try {
         await recordPageCompletion(sessionId, "howItWorks");
@@ -139,10 +139,10 @@ export default function App() {
     } else if (testMode) {
       console.log("🧪 Test mode: Skipped saving how it works completion");
     }
-    setStep("handSelection");
+    await handleHandSelectionComplete(choice);
   };
 
-  const handleHandSelectionComplete = async (choice: "left" | "right") => {
+  const handleHandSelectionComplete = async (choice: HandChoice) => {
     const urlParams = new URLSearchParams(window.location.search);
     const skipTutorial = urlParams.get('skipTutorial');
 
@@ -250,20 +250,12 @@ export default function App() {
           progress={35}
         />
       );
-    case "handSelection":
-      return (
-        <DialTestHandSelection
-          onComplete={handleHandSelectionComplete}
-          onBack={() => setStep("howItWorks")}
-          progress={50}
-        />
-      );
     case "tutorial":
       return (
         <DialTestTutorialSlider
           sessionId={sessionId}
           onComplete={handleTutorialComplete}
-          onBack={() => setStep("handSelection")}
+          onBack={() => setStep("howItWorks")}
           progress={65}
         />
       );
@@ -274,7 +266,7 @@ export default function App() {
           sessionId={sessionId}
           testMode={testMode}
           onComplete={handleDialTestComplete}
-          onBack={() => setStep(skipTutorial ? "handSelection" : "tutorial")}
+          onBack={() => setStep(skipTutorial ? "howItWorks" : "tutorial")}
           progress={80}
         />
       );
