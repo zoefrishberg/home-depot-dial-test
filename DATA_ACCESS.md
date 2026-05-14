@@ -32,7 +32,12 @@ Each survey session stores the following information:
       completedAt?: string,
       handedness?: "left" | "right"
     },
-    tutorial: { completed: boolean, completedAt?: string },
+    tutorial: {
+      completed: boolean,
+      completedAt?: string,
+      durationMs?: number,
+      durationSeconds?: number
+    },
     dialTest: { completed: boolean, completedAt?: string },
     feedback: { completed: boolean, completedAt?: string }
   }

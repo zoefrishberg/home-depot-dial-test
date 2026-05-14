@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { DialTestSlider } from "./components/dial-test-slider";
 import { DialTestTutorialSlider } from "./components/dial-test-tutorial-slider";
 import { DialTestIntro } from "./components/dial-test-intro";
@@ -160,10 +160,13 @@ export default function App() {
     setStep(skipTutorial === 'true' ? "dialTest" : "tutorial");
   };
 
-  const handleTutorialComplete = async () => {
+  const handleTutorialComplete = async (durationMs: number) => {
     if (sessionId && !testMode) {
       try {
-        await recordPageCompletion(sessionId, "tutorial");
+        await recordPageCompletion(sessionId, "tutorial", {
+          durationMs,
+          durationSeconds: Math.round((durationMs / 1000) * 10) / 10,
+        });
         console.log("Tutorial page completed");
       } catch (error) {
         console.error("Failed to record tutorial completion:", error);

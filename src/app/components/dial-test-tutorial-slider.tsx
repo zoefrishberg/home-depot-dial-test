@@ -19,7 +19,7 @@ interface RecordedDataPoint {
 
 interface TutorialProps {
   sessionId: string | null;
-  onComplete: () => void;
+  onComplete: (durationMs: number) => void;
   onBack: () => void;
   progress: number;
 }
@@ -43,6 +43,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
   const intensityRef = useRef(0);
   const tutorialClockRef = useRef(0);
   const recordingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const screenStartedAtRef = useRef(Date.now());
 
   const gatesComplete = hasReachedUpper && hasReachedLower;
 
@@ -201,6 +202,8 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
   // so a slipped finger doesn't immediately flip the tooltip on.
 
   const handleContinue = async () => {
+    const durationMs = Date.now() - screenStartedAtRef.current;
+
     if (sessionId && recordedDataPoints.length > 0) {
       try {
         await saveDialData(sessionId, 'tutorial', recordedDataPoints);
@@ -209,7 +212,7 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
         console.error("Failed to save tutorial data:", error);
       }
     }
-    onComplete();
+    onComplete(durationMs);
   };
 
   // Map -100..100 to constrained range 7.8125%-92.1875% to align handle with slider edges
