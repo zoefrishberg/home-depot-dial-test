@@ -123,20 +123,6 @@ const FINAL_SURVEY_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "amazonAlexaFavorableOpinion",
-        question:
-          "Please indicate whether you have a favorable or unfavorable opinion of Amazon Alexa.",
-        type: "slider",
-        leftLabel: "Very Unfavorable",
-        centerLabel: "No Opinion",
-        rightLabel: "Very Favorable",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
         id: "AmazonFavorableOpinion-v1",
         question:
           "Please indicate whether you have a favorable or unfavorable opinion of Amazon.",
@@ -154,6 +140,20 @@ const FINAL_SURVEY_STEPS: Step[] = [
         id: "doYouHaveAFavorableOrUnfavorableOpinionOfAndyJassy",
         question:
           "Do you have a favorable or unfavorable opinion of Andy Jassy, President & CEO Amazon?",
+        type: "slider",
+        leftLabel: "Very Unfavorable",
+        centerLabel: "No Opinion",
+        rightLabel: "Very Favorable",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "amazonAlexaFavorableOpinion",
+        question:
+          "Please indicate whether you have a favorable or unfavorable opinion of Amazon Alexa.",
         type: "slider",
         leftLabel: "Very Unfavorable",
         centerLabel: "No Opinion",
