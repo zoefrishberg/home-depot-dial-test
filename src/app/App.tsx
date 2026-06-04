@@ -4,13 +4,13 @@ import { DialTestTutorialSlider } from "./components/dial-test-tutorial-slider";
 import { DialTestIntro } from "./components/dial-test-intro";
 import { DialTestFirstExposure } from "./components/dial-test-first-exposure";
 import { DialTestHowItWorks } from "./components/dial-test-how-it-works";
-import { FeedbackTypeform } from "./components/feedback-typeform";
+import { FeedbackTypeform, type SurveyAnswers } from "./components/feedback-typeform";
 import { SurveyHeader } from "./components/survey-header";
 import type { HandChoice } from "./components/hand-choice";
 import { createSession, recordPageCompletion, saveFeedback } from "../utils/api";
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
-type AppStep = "intro" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "feedback" | "complete";
+type AppStep = "intro" | "segmentation" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "feedback" | "complete";
 
 // Variant is fixed to "slider"; kept as a constant so the backend continues to
 // receive a value in the same shape it expects.
@@ -20,6 +20,7 @@ export default function App() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [step, setStep] = useState<AppStep>("intro");
   const [testMode, setTestMode] = useState(false);
+  const [segmentationAnswers, setSegmentationAnswers] = useState<SurveyAnswers>({});
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -130,6 +131,23 @@ export default function App() {
       console.log("🧪 Test mode: Skipped saving intro completion");
     }
 
+    setStep("segmentation");
+  };
+
+  const handleSegmentationSubmit = async (answers: SurveyAnswers) => {
+    setSegmentationAnswers(answers);
+
+    if (sessionId && !testMode) {
+      try {
+        await recordPageCompletion(sessionId, "segmentation");
+        console.log("Segmentation questions completed");
+      } catch (error) {
+        console.error("Failed to record segmentation completion:", error);
+      }
+    } else if (testMode) {
+      console.log("🧪 Test mode: Skipped saving segmentation completion");
+    }
+
     setStep("firstExposure");
   };
 
@@ -200,20 +218,15 @@ export default function App() {
     setStep("feedback");
   };
 
-  const handleFeedbackSubmit = async (answers: {
-    easeOfUse: string;
-    attentionDifficulty: string;
-    expressiveness: string;
-    improvements: string;
-    repeatIntent: string;
-    gender: string;
-    primaryShopper: string;
-    amazonFrequency: string;
-    streamingFrequency: string;
-  }) => {
+  const handleFeedbackSubmit = async (answers: SurveyAnswers) => {
+    const combinedAnswers = {
+      ...segmentationAnswers,
+      ...answers,
+    };
+
     if (sessionId && !testMode) {
       try {
-        await saveFeedback(sessionId, answers);
+        await saveFeedback(sessionId, combinedAnswers);
         await recordPageCompletion(sessionId, "feedback");
         console.log("Feedback saved successfully");
         console.log("=== Session Complete ===");
@@ -251,13 +264,25 @@ export default function App() {
   switch (step) {
     case "intro":
       return <DialTestIntro onContinue={handleIntroComplete} />;
+    case "segmentation":
+      return (
+        <FeedbackTypeform
+          survey="segmentation"
+          initialAnswers={segmentationAnswers}
+          onSubmit={handleSegmentationSubmit}
+          onBack={() => setStep("intro")}
+          progressStart={0}
+          progressEnd={20}
+          submitLabel="Continue"
+        />
+      );
     case "firstExposure":
       return (
         <DialTestFirstExposure
           sessionId={sessionId}
           testMode={testMode}
           onComplete={handleFirstExposureComplete}
-          onBack={() => setStep("intro")}
+          onBack={() => setStep("segmentation")}
           progress={20}
         />
       );
@@ -293,7 +318,7 @@ export default function App() {
     case "feedback":
       return (
         <FeedbackTypeform
-          sessionId={sessionId}
+          survey="feedback"
           onSubmit={handleFeedbackSubmit}
           onBack={() => setStep("dialTest")}
           progressStart={80}

@@ -62,17 +62,7 @@ export async function getSessionData(sessionId: string) {
 
 export async function saveFeedback(
   sessionId: string,
-  feedback: {
-    easeOfUse: string;
-    attentionDifficulty: string;
-    expressiveness: string;
-    improvements: string;
-    repeatIntent: string;
-    gender: string;
-    primaryShopper: string;
-    amazonFrequency: string;
-    streamingFrequency: string;
-  }
+  feedback: Record<string, string | number>
 ) {
   return apiCall(`/session/${sessionId}/feedback`, {
     method: 'POST',
