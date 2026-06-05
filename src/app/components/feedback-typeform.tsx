@@ -36,6 +36,32 @@ interface TextQuestion {
   required: boolean;
 }
 
+interface YearQuestion {
+  id: string;
+  question: string;
+  type: "year";
+  placeholder?: string;
+  min: number;
+  max: number;
+  required: boolean;
+}
+
+interface ZipQuestion {
+  id: string;
+  question: string;
+  type: "zip";
+  placeholder?: string;
+  required: boolean;
+}
+
+interface DollarQuestion {
+  id: string;
+  question: string;
+  type: "dollar";
+  placeholder?: string;
+  required: boolean;
+}
+
 interface SliderQuestion {
   id: string;
   question: string;
@@ -46,7 +72,13 @@ interface SliderQuestion {
   required: boolean;
 }
 
-type Question = SingleQuestion | TextQuestion | SliderQuestion;
+type Question =
+  | SingleQuestion
+  | TextQuestion
+  | YearQuestion
+  | ZipQuestion
+  | DollarQuestion
+  | SliderQuestion;
 
 interface Step {
   questions: Question[];
@@ -63,6 +95,41 @@ const SEGMENTATION_STEPS: Step[] = [
         question: "What is your gender?",
         type: "single",
         options: ["Female", "Male", "Other"],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "BirthYear2022_13-99-v114",
+        question: "What is your year of birth?",
+        type: "year",
+        placeholder: "YYYY",
+        min: 1925,
+        max: 2012,
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "ZipCode",
+        question: "What is your zip code?",
+        type: "zip",
+        placeholder: "12345",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "AnnualHouseholdIncome",
+        question: "What is your approximate annual household income in dollars?",
+        type: "dollar",
+        placeholder: "0",
         required: true,
       },
     ],
@@ -300,8 +367,29 @@ const isAnswered = (
 ): boolean => {
   if (!question.required) return true;
   if (question.type === "slider") return touched;
+  if (question.type === "year") {
+    const raw = typeof value === "string" ? value.trim() : "";
+    if (!/^\d{4}$/.test(raw)) return false;
+    const year = Number(raw);
+    return year >= question.min && year <= question.max;
+  }
+  if (question.type === "zip") {
+    const raw = typeof value === "string" ? value.trim() : "";
+    return /^\d{5}$/.test(raw);
+  }
+  if (question.type === "dollar") {
+    const raw = typeof value === "string" ? value.trim() : "";
+    const digitsOnly = raw.replace(/[^\d]/g, "");
+    return digitsOnly.length > 0 && Number(digitsOnly) >= 0;
+  }
   if (typeof value !== "string") return false;
   return value.trim().length > 0;
+};
+
+const formatDollar = (raw: string): string => {
+  const digits = raw.replace(/[^\d]/g, "");
+  if (digits.length === 0) return "";
+  return Number(digits).toLocaleString("en-US");
 };
 
 const getStepAnswers = (steps: Step[], answers: SurveyAnswers): SurveyAnswers => {
@@ -340,6 +428,7 @@ export function FeedbackTypeform({
   const [direction, setDirection] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const currentStep = steps[currentIndex];
   const isLastStep = currentIndex === steps.length - 1;
@@ -358,6 +447,16 @@ export function FeedbackTypeform({
     );
     if (firstTextQuestion && textareaRef.current) {
       setTimeout(() => textareaRef.current?.focus(), 400);
+    }
+
+    const firstInputQuestion = currentStep.questions.find(
+      (question) =>
+        question.type === "year" ||
+        question.type === "zip" ||
+        question.type === "dollar"
+    );
+    if (firstInputQuestion && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 400);
     }
   }, [currentIndex, currentStep.questions]);
 
@@ -421,7 +520,12 @@ export function FeedbackTypeform({
       const isTextStep =
         currentStep.questions.length === 1 &&
         currentStep.questions[0].type === "text";
-      if (isTextStep && e.key === "Enter" && !e.shiftKey) {
+      const isInputStep =
+        currentStep.questions.length === 1 &&
+        (currentStep.questions[0].type === "year" ||
+          currentStep.questions[0].type === "zip" ||
+          currentStep.questions[0].type === "dollar");
+      if ((isTextStep || isInputStep) && e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         goNext();
       }
@@ -450,6 +554,8 @@ export function FeedbackTypeform({
     const questionAnswer = answers[question.id];
     const isTouched = !!touched[question.id];
     const blockSpacing = indexInStep > 0 ? "mt-10" : undefined;
+    const inputClass =
+      "w-full px-4 py-3.5 rounded-lg border-2 border-gray-200 bg-white text-gray-700 text-sm focus:outline-none focus:border-[#5B9FED] transition-colors placeholder:text-gray-400";
 
     if (question.type === "single") {
       return (
@@ -525,6 +631,121 @@ export function FeedbackTypeform({
             <p className="text-xs text-gray-400 mt-2">
               {question.required ? "" : "Optional — "}Press Enter or tap the
               button to continue
+            </p>
+          </motion.div>
+        </div>
+      );
+    }
+
+    if (question.type === "year") {
+      const value = typeof questionAnswer === "string" ? questionAnswer : "";
+      const showRangeHint = value.length > 0 && !isAnswered(question, value, true);
+
+      return (
+        <div key={question.id} className={blockSpacing}>
+          <h2 className="text-xl font-semibold text-[#3D3D3D] mb-6 leading-snug">
+            {question.question}
+          </h2>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="numeric"
+              autoComplete="bday-year"
+              maxLength={4}
+              value={value}
+              onChange={(e) => {
+                const next = e.target.value.replace(/[^\d]/g, "").slice(0, 4);
+                setAnswers((prev) => ({ ...prev, [question.id]: next }));
+                setTouched((prev) => ({ ...prev, [question.id]: true }));
+              }}
+              placeholder={question.placeholder}
+              className={inputClass}
+            />
+            <p className="text-xs text-gray-400 mt-2">
+              {showRangeHint
+                ? `Enter a year between ${question.min} and ${question.max}.`
+                : `Enter a 4-digit year (${question.min}-${question.max}).`}
+            </p>
+          </motion.div>
+        </div>
+      );
+    }
+
+    if (question.type === "zip") {
+      const value = typeof questionAnswer === "string" ? questionAnswer : "";
+
+      return (
+        <div key={question.id} className={blockSpacing}>
+          <h2 className="text-xl font-semibold text-[#3D3D3D] mb-6 leading-snug">
+            {question.question}
+          </h2>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="numeric"
+              autoComplete="postal-code"
+              maxLength={5}
+              value={value}
+              onChange={(e) => {
+                const next = e.target.value.replace(/[^\d]/g, "").slice(0, 5);
+                setAnswers((prev) => ({ ...prev, [question.id]: next }));
+                setTouched((prev) => ({ ...prev, [question.id]: true }));
+              }}
+              placeholder={question.placeholder}
+              className={inputClass}
+            />
+            <p className="text-xs text-gray-400 mt-2">
+              Enter a 5-digit US zip code.
+            </p>
+          </motion.div>
+        </div>
+      );
+    }
+
+    if (question.type === "dollar") {
+      const rawValue = typeof questionAnswer === "string" ? questionAnswer : "";
+      const displayValue = rawValue.length > 0 ? formatDollar(rawValue) : "";
+
+      return (
+        <div key={question.id} className={blockSpacing}>
+          <h2 className="text-xl font-semibold text-[#3D3D3D] mb-6 leading-snug">
+            {question.question}
+          </h2>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">
+                $
+              </span>
+              <input
+                ref={inputRef}
+                type="text"
+                inputMode="numeric"
+                value={displayValue}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/[^\d]/g, "");
+                  setAnswers((prev) => ({ ...prev, [question.id]: digits }));
+                  setTouched((prev) => ({ ...prev, [question.id]: true }));
+                }}
+                placeholder={question.placeholder}
+                className={`${inputClass} pl-8`}
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              Approximate total - digits only.
             </p>
           </motion.div>
         </div>
