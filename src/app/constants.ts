@@ -1,4 +1,4 @@
-export type DialTestVideoSlug = "amazon-uk" | "ai-work" | "trump-mature";
+export type DialTestVideoSlug = "alexa-voice" | "ai-work" | "trump-mature";
 export type DialTestVideoFormat = "mp4" | "hls";
 
 export interface DialTestVideo {
@@ -13,14 +13,14 @@ export interface ResolvedDialTestVideo extends DialTestVideo {
   usedFallback: boolean;
 }
 
-export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "amazon-uk";
+export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "alexa-voice";
 
 export const DIAL_TEST_VIDEOS: Record<DialTestVideoSlug, DialTestVideo> = {
-  "amazon-uk": {
-    slug: "amazon-uk",
-    title: "Amazon UK",
-    src: "https://vod-prod-02-source-u4t2w48mf8oc.s3.amazonaws.com/66e9ada2497b6eaa620de6d6-96c9c123bc405c87dfe5f25019c1a876.mp4",
-    format: "mp4",
+  "alexa-voice": {
+    slug: "alexa-voice",
+    title: "Alexa Loses Her Voice",
+    src: "https://customer-tg9n91e7s2q4xczb.cloudflarestream.com/057e932f41eca59c21012a8d95a3e5ee/manifest/video.m3u8",
+    format: "hls",
   },
   "ai-work": {
     slug: "ai-work",
