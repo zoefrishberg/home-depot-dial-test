@@ -137,6 +137,20 @@ const FINAL_SURVEY_STEPS: Step[] = [
   {
     questions: [
       {
+        id: "doYouHaveAFavorableOrUnfavorableOpinionOfJeffBezos",
+        question:
+          "Do you have a favorable or unfavorable opinion of Jeff Bezos?",
+        type: "slider",
+        leftLabel: "Very Unfavorable",
+        centerLabel: "No Opinion",
+        rightLabel: "Very Favorable",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
         id: "doYouHaveAFavorableOrUnfavorableOpinionOfAndyJassy",
         question:
           "Do you have a favorable or unfavorable opinion of Andy Jassy, President & CEO Amazon?",
