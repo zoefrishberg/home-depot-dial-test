@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { Play, Volume2 } from "lucide-react";
-import { DIAL_TEST_VIDEO_SRC } from "../constants";
+import type { DialTestVideo } from "../constants";
 import { SurveyHeader } from "./survey-header";
+import { useVideoSource } from "../../utils/useVideoSource";
 
 interface DialTestFirstExposureProps {
   sessionId: string | null;
@@ -10,18 +11,22 @@ interface DialTestFirstExposureProps {
   onComplete: () => void;
   onBack: () => void;
   progress: number;
+  video: DialTestVideo;
 }
 
 export function DialTestFirstExposure({
   onComplete,
   onBack,
   progress,
+  video,
 }: DialTestFirstExposureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
   const isPlaying = hasStartedPlaying && !hasEnded;
   const shouldShowHeadline = !hasStartedPlaying;
+
+  useVideoSource(videoRef, video);
 
   const handleStartVideo = () => {
     if (videoRef.current) {
@@ -82,7 +87,6 @@ export function DialTestFirstExposure({
             <video
               ref={videoRef}
               className="absolute inset-0 w-full h-full object-contain object-center"
-              src={DIAL_TEST_VIDEO_SRC}
               playsInline
               controls={false}
               onPause={handlePause}

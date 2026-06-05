@@ -62,7 +62,7 @@ export async function getSessionData(sessionId: string) {
 
 export async function saveFeedback(
   sessionId: string,
-  feedback: Record<string, string | number>
+  feedback: Record<string, string | number | boolean | null>
 ) {
   return apiCall(`/session/${sessionId}/feedback`, {
     method: 'POST',

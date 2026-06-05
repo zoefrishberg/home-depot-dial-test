@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { DialTestSlider } from "./components/dial-test-slider";
 import { DialTestTutorialSlider } from "./components/dial-test-tutorial-slider";
 import { DialTestIntro } from "./components/dial-test-intro";
@@ -8,6 +8,11 @@ import { FeedbackTypeform, type SurveyAnswers } from "./components/feedback-type
 import { SurveyHeader } from "./components/survey-header";
 import type { HandChoice } from "./components/hand-choice";
 import { createSession, recordPageCompletion, saveFeedback } from "../utils/api";
+import {
+  getDialTestVideoFeedbackFields,
+  getDialTestVideoMetadata,
+  resolveDialTestVideo,
+} from "./constants";
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
 type AppStep = "intro" | "segmentation" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "feedback" | "complete";
@@ -21,6 +26,14 @@ export default function App() {
   const [step, setStep] = useState<AppStep>("intro");
   const [testMode, setTestMode] = useState(false);
   const [segmentationAnswers, setSegmentationAnswers] = useState<SurveyAnswers>({});
+  const selectedVideo = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return resolveDialTestVideo(urlParams.get("video"));
+  }, []);
+  const selectedVideoMetadata = useMemo(
+    () => getDialTestVideoMetadata(selectedVideo),
+    [selectedVideo]
+  );
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -122,7 +135,9 @@ export default function App() {
   const handleIntroComplete = async () => {
     if (sessionId && !testMode) {
       try {
-        await recordPageCompletion(sessionId, "intro");
+        await recordPageCompletion(sessionId, "intro", {
+          video: selectedVideoMetadata,
+        });
         console.log("Intro page completed");
       } catch (error) {
         console.error("Failed to record intro completion:", error);
@@ -139,7 +154,10 @@ export default function App() {
 
     if (sessionId && !testMode) {
       try {
-        await recordPageCompletion(sessionId, "segmentation");
+        await recordPageCompletion(sessionId, "segmentation", {
+          answers,
+          video: selectedVideoMetadata,
+        });
         console.log("Segmentation questions completed");
       } catch (error) {
         console.error("Failed to record segmentation completion:", error);
@@ -154,7 +172,9 @@ export default function App() {
   const handleFirstExposureComplete = async () => {
     if (sessionId && !testMode) {
       try {
-        await recordPageCompletion(sessionId, "firstExposure");
+        await recordPageCompletion(sessionId, "firstExposure", {
+          video: selectedVideoMetadata,
+        });
         console.log("First exposure page completed");
       } catch (error) {
         console.error("Failed to record first exposure completion:", error);
@@ -222,12 +242,15 @@ export default function App() {
     const combinedAnswers = {
       ...segmentationAnswers,
       ...answers,
+      ...getDialTestVideoFeedbackFields(selectedVideo),
     };
 
     if (sessionId && !testMode) {
       try {
         await saveFeedback(sessionId, combinedAnswers);
-        await recordPageCompletion(sessionId, "feedback");
+        await recordPageCompletion(sessionId, "feedback", {
+          video: selectedVideoMetadata,
+        });
         console.log("Feedback saved successfully");
         console.log("=== Session Complete ===");
         console.log(`Session ID: ${sessionId}`);
@@ -284,6 +307,7 @@ export default function App() {
           onComplete={handleFirstExposureComplete}
           onBack={() => setStep("segmentation")}
           progress={20}
+          video={selectedVideo}
         />
       );
     case "howItWorks":
@@ -312,6 +336,7 @@ export default function App() {
           onComplete={handleDialTestComplete}
           onBack={() => setStep(skipTutorial ? "howItWorks" : "tutorial")}
           progress={80}
+          video={selectedVideo}
         />
       );
     }

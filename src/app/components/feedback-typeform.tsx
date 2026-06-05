@@ -70,11 +70,10 @@ const SEGMENTATION_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "primaryShopper",
-        question:
-          "Are you the primary shopper for your household? (For things like groceries, clothing, and personal items)",
+        id: "WhatRaceOrEthnicGroupMostIdentifyWith",
+        question: "What race or ethnic group do you most identify with?",
         type: "single",
-        options: ["Yes", "I share this responsibility equally", "No"],
+        options: ["White", "Black", "Asian", "Hispanic or Latino", "Other/Mixed"],
         required: true,
       },
     ],
@@ -82,36 +81,15 @@ const SEGMENTATION_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "amazonFrequency",
-        question: "How often do you purchase something from Amazon?",
+        id: "EducationNumerical",
+        question: "What is your educational background?",
         type: "single",
         options: [
-          "Several times per week",
-          "About once per week",
-          "A few times per month",
-          "About once per month",
-          "A few times per year",
-          "Less often",
-          "Never",
-        ],
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "streamingFrequency",
-        question:
-          "How often do you watch TV shows or movies using streaming services (such as Netflix, Hulu, Disney+, Amazon Prime Video, or similar)?",
-        type: "single",
-        options: [
-          "Every day",
-          "Several times per week",
-          "About once per week",
-          "A few times per month",
-          "Less often",
-          "Never",
+          "Some School / No Diploma",
+          "High School Graduate",
+          "Some College",
+          "College Degree",
+          "Postgraduate Degree",
         ],
         required: true,
       },

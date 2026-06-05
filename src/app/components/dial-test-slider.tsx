@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect, type PointerEvent as ReactPointerEv
 import { Button } from "./ui/button";
 import { Volume2, Play } from "lucide-react";
 import { saveDialData, recordPageCompletion } from "../../utils/api";
-import { DIAL_TEST_VIDEO_SRC } from "../constants";
+import { getDialTestVideoMetadata, type ResolvedDialTestVideo } from "../constants";
 import { SurveyHeader } from "./survey-header";
 import { useSliderKeyboard } from "../../utils/useSliderKeyboard";
+import { useVideoSource } from "../../utils/useVideoSource";
 
 interface DataPoint {
   timestamp: number;
@@ -17,9 +18,10 @@ interface DialTestSliderProps {
   onComplete?: () => void;
   onBack: () => void;
   progress: number;
+  video: ResolvedDialTestVideo;
 }
 
-export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack, progress }: DialTestSliderProps) {
+export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack, progress, video }: DialTestSliderProps) {
   const [intensity, setIntensity] = useState(0); // -100 to 100
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTouching, setIsTouching] = useState(false);
@@ -36,7 +38,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
   const recordingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const intensityRef = useRef(0);
 
-  const VIDEO_SRC = DIAL_TEST_VIDEO_SRC;
+  useVideoSource(videoRef, video, video.format === "mp4" ? "#t=0.1" : undefined);
 
   // Keep intensityRef in sync with intensity state
   useEffect(() => {
@@ -229,7 +231,9 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
     if (sessionId && recordedDataPoints.length > 0) {
       try {
         await saveDialData(sessionId, 'actual', recordedDataPoints);
-        await recordPageCompletion(sessionId, 'dialTest');
+        await recordPageCompletion(sessionId, 'dialTest', {
+          video: getDialTestVideoMetadata(video),
+        });
         console.log(`✅ [Slider Variant] Successfully saved ${recordedDataPoints.length} dial test data points`);
       } catch (error) {
         console.error("❌ [Slider Variant] Failed to save dial test data:", error);
@@ -271,7 +275,6 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
           ref={videoRef}
           // Media-fragment hash makes the browser display the frame at 0.1s
           // as the initial poster so the area isn't blank before play.
-          src={`${VIDEO_SRC}#t=0.1`}
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
           onPause={handlePause}
