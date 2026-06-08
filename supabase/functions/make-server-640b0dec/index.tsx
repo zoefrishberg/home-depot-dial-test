@@ -35,12 +35,18 @@ app.post("/make-server-640b0dec/session/create", async (c) => {
     const variant = body?.variant || "unknown";
     const deviceInfo = body?.deviceInfo || null;
     const urlParams = body?.urlParams || null;
-    
+    // Resolved video slug (alexa-voice | ai-work | trump-mature). Prefer the
+    // value the client resolved (handles default/fallback when ?video= is
+    // missing or invalid), fall back to the raw URL param, then null. Stored
+    // as its own top-level field so sessions are cleanly separable by video.
+    const video = body?.video || urlParams?.video || null;
+
     const sessionData = {
       sessionId,
       createdAt: timestamp,
       status: "active",
       variant, // Store A/B test variant
+      video, // Store which video the respondent was shown
       deviceInfo, // Store device type, platform, browser, screen size, etc.
       urlParams, // Store all URL parameters from survey provider
       pages: {
@@ -52,7 +58,7 @@ app.post("/make-server-640b0dec/session/create", async (c) => {
     
     await kv.set(`session:${sessionId}`, sessionData);
     
-    console.log(`Session created: ${sessionId}, Variant: ${variant}, Device: ${deviceInfo?.deviceType || 'unknown'} (${deviceInfo?.platform || 'unknown'}), URL Params: ${Object.keys(urlParams || {}).length} params`);
+    console.log(`Session created: ${sessionId}, Variant: ${variant}, Video: ${video || 'none'}, Device: ${deviceInfo?.deviceType || 'unknown'} (${deviceInfo?.platform || 'unknown'}), URL Params: ${Object.keys(urlParams || {}).length} params`);
     
     return c.json({ 
       success: true, 

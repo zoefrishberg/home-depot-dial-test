@@ -119,7 +119,7 @@ export default function App() {
         });
         console.log("URL parameters captured:", capturedParams);
 
-        const response = await createSession(VARIANT, deviceInfo, capturedParams);
+        const response = await createSession(VARIANT, deviceInfo, capturedParams, selectedVideoMetadata.slug);
         if (response.success) {
           setSessionId(response.sessionId);
           console.log("Session created:", response.sessionId, "Variant:", VARIANT);
