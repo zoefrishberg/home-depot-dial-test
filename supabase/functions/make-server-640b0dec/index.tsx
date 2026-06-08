@@ -40,6 +40,9 @@ app.post("/make-server-640b0dec/session/create", async (c) => {
     // missing or invalid), fall back to the raw URL param, then null. Stored
     // as its own top-level field so sessions are cleanly separable by video.
     const video = body?.video || urlParams?.video || null;
+    // Lucid respondent ID (RID). Prefer the client-captured value, fall back to
+    // the raw URL param, then null. Kept on the session for reconciliation.
+    const rid = body?.rid || urlParams?.RID || null;
 
     const sessionData = {
       sessionId,
@@ -47,6 +50,7 @@ app.post("/make-server-640b0dec/session/create", async (c) => {
       status: "active",
       variant, // Store A/B test variant
       video, // Store which video the respondent was shown
+      rid, // Store Lucid respondent ID for completion reconciliation
       deviceInfo, // Store device type, platform, browser, screen size, etc.
       urlParams, // Store all URL parameters from survey provider
       pages: {
@@ -58,7 +62,7 @@ app.post("/make-server-640b0dec/session/create", async (c) => {
     
     await kv.set(`session:${sessionId}`, sessionData);
     
-    console.log(`Session created: ${sessionId}, Variant: ${variant}, Video: ${video || 'none'}, Device: ${deviceInfo?.deviceType || 'unknown'} (${deviceInfo?.platform || 'unknown'}), URL Params: ${Object.keys(urlParams || {}).length} params`);
+    console.log(`Session created: ${sessionId}, Variant: ${variant}, Video: ${video || 'none'}, RID: ${rid || 'none'}, Device: ${deviceInfo?.deviceType || 'unknown'} (${deviceInfo?.platform || 'unknown'}), URL Params: ${Object.keys(urlParams || {}).length} params`);
     
     return c.json({ 
       success: true, 

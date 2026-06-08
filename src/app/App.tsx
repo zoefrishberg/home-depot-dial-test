@@ -34,6 +34,11 @@ export default function App() {
     () => getDialTestVideoMetadata(selectedVideo),
     [selectedVideo]
   );
+  // Lucid respondent ID, captured once on load so it survives the whole flow.
+  const respondentId = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("RID") ?? "";
+  }, []);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -119,7 +124,7 @@ export default function App() {
         });
         console.log("URL parameters captured:", capturedParams);
 
-        const response = await createSession(VARIANT, deviceInfo, capturedParams, selectedVideoMetadata.slug);
+        const response = await createSession(VARIANT, deviceInfo, capturedParams, selectedVideoMetadata.slug, respondentId || undefined);
         if (response.success) {
           setSessionId(response.sessionId);
           console.log("Session created:", response.sessionId, "Variant:", VARIANT);
@@ -271,10 +276,7 @@ export default function App() {
   // Redirect to callback URL when complete
   useEffect(() => {
     if (step === "complete") {
-      const urlParams = new URLSearchParams(window.location.search);
-      const rid = urlParams.get('RID') || '';
-
-      const callbackUrl = `https://notch.insights.supply/cb?token=23a7efa4-df2c-4b40-a3c2-c09541e276af&RID=${rid}`;
+      const callbackUrl = `https://notch.insights.supply/cb?token=23a7efa4-df2c-4b40-a3c2-c09541e276af&RID=${encodeURIComponent(respondentId)}`;
 
       console.log(`Redirecting to callback URL: ${callbackUrl}`);
 
@@ -282,7 +284,7 @@ export default function App() {
         window.location.href = callbackUrl;
       }, 2000);
     }
-  }, [step]);
+  }, [step, respondentId]);
 
   switch (step) {
     case "intro":
