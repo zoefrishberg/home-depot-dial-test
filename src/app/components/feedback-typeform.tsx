@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Check } from "lucide-react";
 import { Button } from "./ui/button";
@@ -8,7 +8,7 @@ import { SurveyHeader } from "./survey-header";
 export type AnswerValue = string | number;
 export type SurveyAnswers = Record<string, AnswerValue>;
 
-type SurveyKind = "segmentation" | "feedback";
+type SurveyKind = "segmentation";
 
 interface FeedbackTypeformProps {
   survey: SurveyKind;
@@ -25,6 +25,23 @@ interface SingleQuestion {
   question: string;
   type: "single";
   options: string[];
+  required: boolean;
+}
+
+interface MultiQuestion {
+  id: string;
+  question: string;
+  type: "multi";
+  // Non-anchor options. These are the ones that get randomized per session when
+  // `randomize` is true.
+  options: string[];
+  // Pinned to the bottom in fixed order, never randomized (e.g. "Other",
+  // "None of the above").
+  anchorOptions?: string[];
+  // Selecting one of these clears every other selection, and selecting any other
+  // option clears these (e.g. "None of the above").
+  exclusiveOptions?: string[];
+  randomize?: boolean;
   required: boolean;
 }
 
@@ -74,6 +91,7 @@ interface SliderQuestion {
 
 type Question =
   | SingleQuestion
+  | MultiQuestion
   | TextQuestion
   | YearQuestion
   | ZipQuestion
@@ -82,19 +100,44 @@ type Question =
 
 interface Step {
   questions: Question[];
+  // Optional predicate; when it returns false the step is skipped entirely.
+  showIf?: (answers: SurveyAnswers) => boolean;
 }
 
 const OPTION_KEYS = ["A", "B", "C", "D", "E", "F", "G"];
 const SLIDER_DEFAULT = 50;
 
-const SEGMENTATION_STEPS: Step[] = [
+// Multi-select answers are stored as a single delimited string so they fit the
+// existing string|number answer shape and persist cleanly in the session record.
+// No option label contains this delimiter.
+const MULTI_DELIM = " | ";
+const parseMulti = (value: AnswerValue | undefined): string[] =>
+  typeof value === "string" && value.length > 0 ? value.split(MULTI_DELIM) : [];
+const joinMulti = (values: string[]): string => values.join(MULTI_DELIM);
+
+const RACE_HISPANIC_OPTION = "Hispanic or Latino/Latina/Latinx";
+
+const shuffle = <T,>(input: T[]): T[] => {
+  const copy = [...input];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
+
+// Pre-video segmentation questions. Same set for all 5 videos, asked before the
+// respondent ever sees the clip. One question per step. Ordinal scales (income,
+// education, World Cup interest) keep their order; select-all questions randomize
+// their non-anchor options.
+const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
         id: "gender",
         question: "What is your gender?",
         type: "single",
-        options: ["Female", "Male", "Other"],
+        options: ["Male", "Female", "Other"],
         required: true,
       },
     ],
@@ -102,12 +145,12 @@ const SEGMENTATION_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "BirthYear2022_13-99-v114",
+        id: "yearOfBirth",
         question: "What is your year of birth?",
         type: "year",
         placeholder: "YYYY",
-        min: 1925,
-        max: 2012,
+        min: 1900,
+        max: 2026,
         required: true,
       },
     ],
@@ -115,7 +158,7 @@ const SEGMENTATION_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "ZipCode",
+        id: "zipCode",
         question: "What is your zip code?",
         type: "zip",
         placeholder: "12345",
@@ -126,21 +169,19 @@ const SEGMENTATION_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "AnnualHouseholdIncome",
-        question: "What is your approximate annual household income in dollars?",
-        type: "dollar",
-        placeholder: "0",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "WhatRaceOrEthnicGroupMostIdentifyWith",
-        question: "What race or ethnic group do you most identify with?",
+        id: "householdIncome",
+        question: "What is your household income before taxes?",
         type: "single",
-        options: ["White", "Black", "Asian", "Hispanic or Latino", "Other/Mixed"],
+        options: [
+          "Under $20k",
+          "$20–40k",
+          "$40–60k",
+          "$60–80k",
+          "$80–100k",
+          "$100–150k",
+          "$150–200k",
+          "Over $200k",
+        ],
         required: true,
       },
     ],
@@ -148,12 +189,49 @@ const SEGMENTATION_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "EducationNumerical",
+        id: "raceEthnicity",
+        question:
+          "Which of the following describe your race or ethnicity? Select all that apply.",
+        type: "multi",
+        options: [
+          "Black",
+          "Asian",
+          RACE_HISPANIC_OPTION,
+          "White",
+          "Native American/Indigenous",
+          "Native Hawaiian or Pacific Islander",
+        ],
+        anchorOptions: ["Other"],
+        randomize: true,
+        required: true,
+      },
+    ],
+  },
+  {
+    // Only shown if the respondent did NOT pick the Hispanic option in the
+    // race/ethnicity select-all above.
+    showIf: (answers) =>
+      !parseMulti(answers["raceEthnicity"]).includes(RACE_HISPANIC_OPTION),
+    questions: [
+      {
+        id: "hispanicOrigin",
+        question: "Are you of Hispanic or Latino origin?",
+        type: "single",
+        options: ["Yes", "No"],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "education",
         question: "What is your educational background?",
         type: "single",
         options: [
-          "Some School / No Diploma",
+          "Some School",
           "High School Graduate",
+          "Trade School",
           "Some College",
           "College Degree",
           "Postgraduate Degree",
@@ -162,19 +240,27 @@ const SEGMENTATION_STEPS: Step[] = [
       },
     ],
   },
-];
-
-const FINAL_SURVEY_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "AmazonFavorableOpinion-v1",
-        question:
-          "Please indicate whether you have a favorable or unfavorable opinion of Amazon.",
-        type: "slider",
-        leftLabel: "Very Unfavorable",
-        centerLabel: "No Opinion",
-        rightLabel: "Very Favorable",
+        id: "sportsWatched",
+        question: "Which of these sports do you watch? Select all that apply.",
+        type: "multi",
+        options: [
+          "International Football (soccer)",
+          "American Football (professional)",
+          "American Football (college)",
+          "Baseball",
+          "Basketball",
+          "Hockey",
+          "Golf",
+          "Tennis",
+          "Motorsports",
+          "Combat Sports and Boxing",
+        ],
+        anchorOptions: ["Other", "None of the above"],
+        exclusiveOptions: ["None of the above"],
+        randomize: true,
         required: true,
       },
     ],
@@ -182,95 +268,14 @@ const FINAL_SURVEY_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "doYouHaveAFavorableOrUnfavorableOpinionOfJeffBezos",
-        question:
-          "Do you have a favorable or unfavorable opinion of Jeff Bezos?",
-        type: "slider",
-        leftLabel: "Very Unfavorable",
-        centerLabel: "No Opinion",
-        rightLabel: "Very Favorable",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "doYouHaveAFavorableOrUnfavorableOpinionOfAndyJassy",
-        question:
-          "Do you have a favorable or unfavorable opinion of Andy Jassy, President & CEO Amazon?",
-        type: "slider",
-        leftLabel: "Very Unfavorable",
-        centerLabel: "No Opinion",
-        rightLabel: "Very Favorable",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "amazonAlexaFavorableOpinion",
-        question:
-          "Please indicate whether you have a favorable or unfavorable opinion of Amazon Alexa.",
-        type: "slider",
-        leftLabel: "Very Unfavorable",
-        centerLabel: "No Opinion",
-        rightLabel: "Very Favorable",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "toWhatExtentDoYouAgreeOrDisagreeThatAmazonIsALeaderInAI",
-        question:
-          "To what extent do you agree or disagree that Amazon is a leader in artificial intelligence?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "Neutral",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-      {
-        id: "toWhatExtentDoYouAgreeOrDisagreeThatAmazonIsInnovatingInAITools",
-        question:
-          "To what extent do you agree or disagree that Amazon is innovating in artificial intelligence tools?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "Neutral",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "AmazonPurchaseWithinMonth-v1",
-        question:
-          "Please indicate whether you are likely to purchase from Amazon in the next month.",
-        type: "slider",
-        leftLabel: "Not at All Likely",
-        centerLabel: "Somewhat",
-        rightLabel: "Very Likely",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "easeOfUse",
-        question: "How easy was it to use the slider?",
+        id: "worldCupInterest",
+        question: "How closely will you follow the 2026 FIFA World Cup?",
         type: "single",
         options: [
-          "Very easy",
-          "Somewhat easy",
-          "Neither easy nor difficult",
-          "Somewhat difficult",
-          "Very difficult",
+          "Follow closely",
+          "Watch regularly",
+          "Tune in occasionally",
+          "Won't follow at all",
         ],
         required: true,
       },
@@ -279,52 +284,33 @@ const FINAL_SURVEY_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "attentionDifficulty",
+        id: "paymentBrands",
         question:
-          "Was it difficult to pay attention to the video while using the slider?",
-        type: "single",
-        options: ["Not at all", "A little", "Somewhat", "A lot"],
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "expressiveness",
-        question: "Did this method let you show how you felt?",
-        type: "single",
-        options: ["Yes, definitely", "Yes, somewhat", "Not really", "Not at all"],
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "improvements",
-        question: "What could be improved about this experience?",
-        type: "text",
-        placeholder: "Share your thoughts...",
-        required: false,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "repeatIntent",
-        question: "Would you take another survey like this?",
-        type: "single",
-        options: ["Yes", "Maybe", "No"],
+          "Which of these payment brands do you have? Select all that apply.",
+        type: "multi",
+        options: [
+          "American Express",
+          "Apple Pay",
+          "CashApp",
+          "Discover",
+          "Google Pay",
+          "MasterCard",
+          "PayPal",
+          "Samsung Pay",
+          "Venmo",
+          "Visa",
+          "Zelle",
+        ],
+        anchorOptions: ["Other", "None of the above"],
+        exclusiveOptions: ["None of the above"],
+        randomize: true,
         required: true,
       },
     ],
   },
 ];
 
-const getSurveySteps = (survey: SurveyKind): Step[] =>
-  survey === "segmentation" ? SEGMENTATION_STEPS : FINAL_SURVEY_STEPS;
+const getSurveySteps = (_survey: SurveyKind): Step[] => PRE_VIDEO_STEPS;
 
 const seedAnswers = (
   steps: Step[],
@@ -367,6 +353,7 @@ const isAnswered = (
 ): boolean => {
   if (!question.required) return true;
   if (question.type === "slider") return touched;
+  if (question.type === "multi") return parseMulti(value).length > 0;
   if (question.type === "year") {
     const raw = typeof value === "string" ? value.trim() : "";
     if (!/^\d{4}$/.test(raw)) return false;
@@ -417,23 +404,54 @@ export function FeedbackTypeform({
   progressEnd,
   submitLabel = "Submit",
 }: FeedbackTypeformProps) {
-  const steps = getSurveySteps(survey);
+  const allSteps = getSurveySteps(survey);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<SurveyAnswers>(() =>
-    seedAnswers(steps, initialAnswers)
+    seedAnswers(allSteps, initialAnswers)
   );
   const [touched, setTouched] = useState<Record<string, boolean>>(() =>
-    seedTouched(steps, initialAnswers)
+    seedTouched(allSteps, initialAnswers)
   );
   const [direction, setDirection] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const currentStep = steps[currentIndex];
-  const isLastStep = currentIndex === steps.length - 1;
+  // Randomized non-anchor option order, computed once per session so the order
+  // is stable across re-renders within a respondent's run.
+  const [randomizedOptions] = useState<Record<string, string[]>>(() => {
+    const map: Record<string, string[]> = {};
+    allSteps.forEach((step) =>
+      step.questions.forEach((question) => {
+        if (question.type === "multi") {
+          map[question.id] = question.randomize
+            ? shuffle(question.options)
+            : [...question.options];
+        }
+      })
+    );
+    return map;
+  });
+
+  // Steps that should currently be shown, after applying conditional logic.
+  const visibleSteps = useMemo(
+    () => allSteps.filter((step) => !step.showIf || step.showIf(answers)),
+    [allSteps, answers]
+  );
+
+  // If a conditional step disappears while we're past it, keep the index valid.
+  useEffect(() => {
+    if (currentIndex > visibleSteps.length - 1) {
+      setCurrentIndex(Math.max(0, visibleSteps.length - 1));
+    }
+  }, [visibleSteps.length, currentIndex]);
+
+  const currentStep =
+    visibleSteps[currentIndex] ?? visibleSteps[visibleSteps.length - 1];
+  const isLastStep = currentIndex === visibleSteps.length - 1;
   const progress =
-    progressStart + (currentIndex / steps.length) * (progressEnd - progressStart);
+    progressStart +
+    (currentIndex / visibleSteps.length) * (progressEnd - progressStart);
   const autoAdvanceEnabled =
     currentStep.questions.length === 1 &&
     currentStep.questions[0].type === "single";
@@ -462,11 +480,11 @@ export function FeedbackTypeform({
 
   const goNext = useCallback(() => {
     if (isTransitioning || !canAdvance) return;
-    if (currentIndex < steps.length - 1) {
+    if (currentIndex < visibleSteps.length - 1) {
       setDirection(1);
       setCurrentIndex((prev) => prev + 1);
     }
-  }, [canAdvance, currentIndex, isTransitioning, steps.length]);
+  }, [canAdvance, currentIndex, isTransitioning, visibleSteps.length]);
 
   const goPrev = useCallback(() => {
     if (isTransitioning) return;
@@ -480,7 +498,7 @@ export function FeedbackTypeform({
 
   const handleSubmit = () => {
     if (!canAdvance) return;
-    onSubmit(getStepAnswers(steps, answers));
+    onSubmit(getStepAnswers(allSteps, answers));
   };
 
   const handleOptionSelect = useCallback(
@@ -492,14 +510,38 @@ export function FeedbackTypeform({
       if (!autoAdvanceEnabled) return;
       setIsTransitioning(true);
       setTimeout(() => {
-        if (currentIndex < steps.length - 1) {
+        if (currentIndex < visibleSteps.length - 1) {
           setDirection(1);
           setCurrentIndex((prev) => prev + 1);
         }
         setIsTransitioning(false);
       }, 450);
     },
-    [autoAdvanceEnabled, currentIndex, isTransitioning, steps.length]
+    [autoAdvanceEnabled, currentIndex, isTransitioning, visibleSteps.length]
+  );
+
+  const handleMultiToggle = useCallback(
+    (question: MultiQuestion, option: string) => {
+      if (isTransitioning) return;
+      const exclusive = question.exclusiveOptions ?? [];
+      setAnswers((prev) => {
+        const current = parseMulti(prev[question.id]);
+        const isSelected = current.includes(option);
+        let next: string[];
+        if (exclusive.includes(option)) {
+          // Toggling an exclusive option: select it alone, or clear it.
+          next = isSelected ? [] : [option];
+        } else if (isSelected) {
+          next = current.filter((o) => o !== option);
+        } else {
+          // Selecting a normal option clears any exclusive selection.
+          next = [...current.filter((o) => !exclusive.includes(o)), option];
+        }
+        return { ...prev, [question.id]: joinMulti(next) };
+      });
+      setTouched((prev) => ({ ...prev, [question.id]: true }));
+    },
+    [isTransitioning]
   );
 
   useEffect(() => {
@@ -589,8 +631,56 @@ export function FeedbackTypeform({
                     {isSelected ? (
                       <Check className="w-3.5 h-3.5" />
                     ) : (
-                      OPTION_KEYS[idx]
+                      OPTION_KEYS[idx] ?? ""
                     )}
+                  </span>
+                  <span className={isSelected ? "font-medium" : ""}>
+                    {option}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    if (question.type === "multi") {
+      const selected = parseMulti(questionAnswer);
+      const nonAnchor = randomizedOptions[question.id] ?? question.options;
+      const anchors = question.anchorOptions ?? [];
+      const displayOptions = [...nonAnchor, ...anchors];
+
+      return (
+        <div key={question.id} className={blockSpacing}>
+          <h2 className="text-xl font-semibold text-[#3D3D3D] mb-2 leading-snug">
+            {question.question}
+          </h2>
+          <p className="text-xs text-gray-400 mb-5">Select all that apply.</p>
+          <div className="flex flex-col gap-2">
+            {displayOptions.map((option, idx) => {
+              const isSelected = selected.includes(option);
+              return (
+                <motion.button
+                  key={option}
+                  onClick={() => handleMultiToggle(question, option)}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.04, duration: 0.3 }}
+                  className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all text-sm flex items-center gap-3 ${
+                    isSelected
+                      ? "border-[#5B9FED] bg-[#5B9FED]/10 text-[#3D3D3D]"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  <span
+                    className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${
+                      isSelected
+                        ? "bg-[#5B9FED] text-white"
+                        : "bg-white border-2 border-gray-300"
+                    }`}
+                  >
+                    {isSelected ? <Check className="w-3.5 h-3.5" /> : null}
                   </span>
                   <span className={isSelected ? "font-medium" : ""}>
                     {option}

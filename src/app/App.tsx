@@ -7,15 +7,14 @@ import { DialTestHowItWorks } from "./components/dial-test-how-it-works";
 import { FeedbackTypeform, type SurveyAnswers } from "./components/feedback-typeform";
 import { SurveyHeader } from "./components/survey-header";
 import type { HandChoice } from "./components/hand-choice";
-import { createSession, recordPageCompletion, saveFeedback } from "../utils/api";
+import { createSession, recordPageCompletion } from "../utils/api";
 import {
-  getDialTestVideoFeedbackFields,
   getDialTestVideoMetadata,
   resolveDialTestVideo,
 } from "./constants";
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
-type AppStep = "intro" | "segmentation" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "feedback" | "complete";
+type AppStep = "intro" | "segmentation" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "complete";
 
 // Variant is fixed to "slider"; kept as a constant so the backend continues to
 // receive a value in the same shape it expects.
@@ -239,34 +238,31 @@ export default function App() {
     setStep("dialTest");
   };
 
-  const handleDialTestComplete = () => {
-    setStep("feedback");
-  };
-
-  const handleFeedbackSubmit = async (answers: SurveyAnswers) => {
-    const combinedAnswers = {
-      ...segmentationAnswers,
-      ...answers,
-      ...getDialTestVideoFeedbackFields(selectedVideo),
-    };
-
+  // End of the dial: there are no post-video questions this round, so the final
+  // save fires here and must complete before the Lucid redirect. It writes all
+  // pre-video answers, the resolved video slug, and the Lucid RID into the
+  // session record (no `feedback:` row is created this round). The dial data
+  // itself is already saved by DialTestSlider before this runs.
+  const handleDialTestComplete = async () => {
     if (sessionId && !testMode) {
       try {
-        await saveFeedback(sessionId, combinedAnswers);
-        await recordPageCompletion(sessionId, "feedback", {
+        await recordPageCompletion(sessionId, "completion", {
+          preVideoAnswers: segmentationAnswers,
           video: selectedVideoMetadata,
+          rid: respondentId || null,
         });
-        console.log("Feedback saved successfully");
+        console.log("Pre-video answers saved to session before redirect");
         console.log("=== Session Complete ===");
         console.log(`Session ID: ${sessionId}`);
+        console.log(`Video: ${selectedVideoMetadata.slug} | RID: ${respondentId || "none"}`);
         console.log(`To retrieve this session's data, use: getSessionData("${sessionId}")`);
       } catch (error) {
-        console.error("Failed to save feedback:", error);
-        alert("Failed to save feedback. Please try again.");
-        return;
+        console.error("Failed to save final completion record:", error);
+        // Still proceed to the redirect so the respondent is returned to Lucid;
+        // the session, dial data, and per-step segmentation save already exist.
       }
     } else if (testMode) {
-      console.log("🧪 Test mode: Skipped saving feedback");
+      console.log("🧪 Test mode: Skipped final completion save");
       console.log("=== Test Session Complete (not saved) ===");
       console.log(`Mock Session ID: ${sessionId}`);
     }
@@ -342,16 +338,6 @@ export default function App() {
         />
       );
     }
-    case "feedback":
-      return (
-        <FeedbackTypeform
-          survey="feedback"
-          onSubmit={handleFeedbackSubmit}
-          onBack={() => setStep("dialTest")}
-          progressStart={80}
-          progressEnd={100}
-        />
-      );
     case "complete":
       return (
         <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">

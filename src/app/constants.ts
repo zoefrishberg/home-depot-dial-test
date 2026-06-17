@@ -1,4 +1,9 @@
-export type DialTestVideoSlug = "alexa-voice" | "ai-work" | "trump-mature";
+export type DialTestVideoSlug =
+  | "kitchen"
+  | "fifa-acceptance"
+  | "fifa-convenience"
+  | "fifa-security"
+  | "fifa-tap-in";
 export type DialTestVideoFormat = "mp4" | "hls";
 
 export interface DialTestVideo {
@@ -13,26 +18,45 @@ export interface ResolvedDialTestVideo extends DialTestVideo {
   usedFallback: boolean;
 }
 
-export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "alexa-voice";
+export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "kitchen";
 
+const SUPABASE_VIDEO_BASE =
+  "https://tkymslezfmtkyebnagad.supabase.co/storage/v1/object/public/visavideos";
+
+// Each video is fielded as its own Lucid campaign and routed via ?video=<slug>.
+// All clips are plain, pre-trimmed/compressed mp4 in Supabase Storage — no
+// offset or HLS player needed (the slider already shows the 0.1s frame as a
+// poster so there is no black intro).
 export const DIAL_TEST_VIDEOS: Record<DialTestVideoSlug, DialTestVideo> = {
-  "alexa-voice": {
-    slug: "alexa-voice",
-    title: "Alexa Loses Her Voice",
-    src: "https://customer-tg9n91e7s2q4xczb.cloudflarestream.com/057e932f41eca59c21012a8d95a3e5ee/manifest/video.m3u8",
-    format: "hls",
+  kitchen: {
+    slug: "kitchen",
+    title: "Kitchen",
+    src: `${SUPABASE_VIDEO_BASE}/kitchen.mp4`,
+    format: "mp4",
   },
-  "ai-work": {
-    slug: "ai-work",
-    title: "AI will elevate people at work, not replace jobs",
-    src: "https://customer-tg9n91e7s2q4xczb.cloudflarestream.com/5f9d3e182e4c7d907434bbc2986e269e/manifest/video.m3u8",
-    format: "hls",
+  "fifa-acceptance": {
+    slug: "fifa-acceptance",
+    title: "FIFA — Acceptance",
+    src: `${SUPABASE_VIDEO_BASE}/fifa-acceptance.mp4`,
+    format: "mp4",
   },
-  "trump-mature": {
-    slug: "trump-mature",
-    title: "Trump is more mature, more disciplined than in his first term",
-    src: "https://customer-tg9n91e7s2q4xczb.cloudflarestream.com/99bb8f79249ebe79ff996bb89bc8c650/manifest/video.m3u8",
-    format: "hls",
+  "fifa-convenience": {
+    slug: "fifa-convenience",
+    title: "FIFA — Convenience",
+    src: `${SUPABASE_VIDEO_BASE}/fifa-convenience.mp4`,
+    format: "mp4",
+  },
+  "fifa-security": {
+    slug: "fifa-security",
+    title: "FIFA — Security",
+    src: `${SUPABASE_VIDEO_BASE}/fifa-security.mp4`,
+    format: "mp4",
+  },
+  "fifa-tap-in": {
+    slug: "fifa-tap-in",
+    title: "FIFA — Tap In",
+    src: `${SUPABASE_VIDEO_BASE}/fifa-tap-in.mp4`,
+    format: "mp4",
   },
 };
 
