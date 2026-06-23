@@ -8,7 +8,7 @@ import { SurveyHeader } from "./survey-header";
 export type AnswerValue = string | number;
 export type SurveyAnswers = Record<string, AnswerValue>;
 
-type SurveyKind = "segmentation";
+type SurveyKind = "segmentation" | "postVideo";
 
 interface FeedbackTypeformProps {
   survey: SurveyKind;
@@ -115,8 +115,6 @@ const parseMulti = (value: AnswerValue | undefined): string[] =>
   typeof value === "string" && value.length > 0 ? value.split(MULTI_DELIM) : [];
 const joinMulti = (values: string[]): string => values.join(MULTI_DELIM);
 
-const RACE_HISPANIC_OPTION = "Hispanic or Latino/Latina/Latinx";
-
 const shuffle = <T,>(input: T[]): T[] => {
   const copy = [...input];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -126,11 +124,31 @@ const shuffle = <T,>(input: T[]): T[] => {
   return copy;
 };
 
-// Pre-video segmentation questions. Same set for all 5 videos, asked before the
-// respondent ever sees the clip. One question per step. Ordinal scales (income,
-// education, World Cup interest) keep their order; select-all questions randomize
-// their non-anchor options.
+// Amazon VA Combo round.
+//
+// Pre-video segmentation: demographics + two bipolar sliders, asked before the
+// respondent ever sees the clip. These are covariates Mike/Anshuk break the
+// outcome metrics down by, so their answers are stored in the segmentation /
+// preVideoAnswers blob (NOT the post-video feedback row).
+//
+// IMPORTANT — order is intentional and must not be randomized. Each item is
+// asked exactly once (either pre- OR post-video, never both); there is no
+// pre/post pairing. One question per step.
 const PRE_VIDEO_STEPS: Step[] = [
+  {
+    questions: [
+      {
+        // Age — same input style (year of birth) as prior rounds.
+        id: "yearOfBirth",
+        question: "What is your year of birth?",
+        type: "year",
+        placeholder: "YYYY",
+        min: 1900,
+        max: 2026,
+        required: true,
+      },
+    ],
+  },
   {
     questions: [
       {
@@ -145,79 +163,14 @@ const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "yearOfBirth",
-        question: "What is your year of birth?",
-        type: "year",
-        placeholder: "YYYY",
-        min: 1900,
-        max: 2026,
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "zipCode",
-        question: "What is your zip code?",
-        type: "zip",
-        placeholder: "12345",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "householdIncome",
-        question: "What is your household income before taxes?",
-        type: "single",
-        options: [
-          "Under $20k",
-          "$20–40k",
-          "$40–60k",
-          "$60–80k",
-          "$80–100k",
-          "$100–150k",
-          "$150–200k",
-          "Over $200k",
-        ],
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "raceEthnicity",
+        // Support DC Development (bipolar slider).
+        id: "supportDcDevelopment",
         question:
-          "Which of the following describe your race or ethnicity? Select all that apply.",
-        type: "multi",
-        options: [
-          "Black",
-          "Asian",
-          RACE_HISPANIC_OPTION,
-          "White",
-          "Native American/Indigenous",
-          "Native Hawaiian or Pacific Islander",
-        ],
-        anchorOptions: ["Other"],
-        randomize: true,
-        required: true,
-      },
-    ],
-  },
-  {
-    // Only shown if the respondent did NOT pick the Hispanic option in the
-    // race/ethnicity select-all above.
-    showIf: (answers) =>
-      !parseMulti(answers["raceEthnicity"]).includes(RACE_HISPANIC_OPTION),
-    questions: [
-      {
-        id: "hispanicOrigin",
-        question: "Are you of Hispanic or Latino origin?",
-        type: "single",
-        options: ["Yes", "No"],
+          "Do you support or oppose data center development in your local community?",
+        type: "slider",
+        leftLabel: "Strongly Oppose",
+        centerLabel: "Neutral",
+        rightLabel: "Strongly Support",
         required: true,
       },
     ],
@@ -225,92 +178,144 @@ const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "education",
-        question: "What is your educational background?",
-        type: "single",
-        options: [
-          "Some School",
-          "High School Graduate",
-          "Trade School",
-          "Some College",
-          "College Degree",
-          "Postgraduate Degree",
-        ],
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "sportsWatched",
-        question: "Which of these sports do you watch? Select all that apply.",
-        type: "multi",
-        options: [
-          "International Football (soccer)",
-          "American Football (professional)",
-          "American Football (college)",
-          "Baseball",
-          "Basketball",
-          "Hockey",
-          "Golf",
-          "Tennis",
-          "Motorsports",
-          "Combat Sports and Boxing",
-        ],
-        anchorOptions: ["Other", "None of the above"],
-        exclusiveOptions: ["None of the above"],
-        randomize: true,
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "worldCupInterest",
-        question: "How closely will you follow the 2026 FIFA World Cup?",
-        type: "single",
-        options: [
-          "Follow closely",
-          "Watch regularly",
-          "Tune in occasionally",
-          "Won't follow at all",
-        ],
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "paymentBrands",
+        // Positive Impact — Large Tech Companies (bipolar slider).
+        id: "positiveImpactLargeTech",
         question:
-          "Which of these payment brands do you have? Select all that apply.",
-        type: "multi",
-        options: [
-          "American Express",
-          "Apple Pay",
-          "CashApp",
-          "Discover",
-          "Google Pay",
-          "MasterCard",
-          "PayPal",
-          "Samsung Pay",
-          "Venmo",
-          "Visa",
-          "Zelle",
-        ],
-        anchorOptions: ["Other", "None of the above"],
-        exclusiveOptions: ["None of the above"],
-        randomize: true,
+          "To what extent do you agree or disagree that large tech companies have a positive impact on your local community?",
+        type: "slider",
+        leftLabel: "Strongly Disagree",
+        centerLabel: "Neutral",
+        rightLabel: "Strongly Agree",
         required: true,
       },
     ],
   },
 ];
 
-const getSurveySteps = (_survey: SurveyKind): Step[] => PRE_VIDEO_STEPS;
+// Post-video outcomes: 8 bipolar sliders, post-only, in this exact fixed order.
+// No randomization. Stored in the feedback row (the post-video answers blob),
+// separate from the pre-video segmentation answers.
+//
+// Analyst note: the two Regulation items are reverse-valence vs. favorability —
+// a pro-Amazon respondent lands on the "disagree/left" side. Slider direction is
+// kept as written; reverse-scoring is handled downstream by Mike/Anshuk.
+const POST_VIDEO_STEPS: Step[] = [
+  {
+    questions: [
+      {
+        id: "dcBuiltResponsibly",
+        question:
+          "To what extent do you agree or disagree that data centers are built responsibly in your community?",
+        type: "slider",
+        leftLabel: "Strongly Disagree",
+        centerLabel: "Neutral",
+        rightLabel: "Strongly Agree",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "regulateLargeTech",
+        question:
+          "To what extent do you agree or disagree that the government should regulate large tech companies more?",
+        type: "slider",
+        leftLabel: "Strongly Disagree",
+        centerLabel: "Neutral",
+        rightLabel: "Strongly Agree",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "amazonFavorability",
+        question:
+          "Please indicate whether you have a favorable or unfavorable opinion of Amazon.",
+        type: "slider",
+        leftLabel: "Very Unfavorable",
+        centerLabel: "Neutral",
+        rightLabel: "Very Favorable",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "amazonPositiveImpactVirginia",
+        question:
+          "To what extent do you agree or disagree that Amazon has a positive impact on Virginia and its communities?",
+        type: "slider",
+        leftLabel: "Strongly Disagree",
+        centerLabel: "Neutral",
+        rightLabel: "Strongly Agree",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "amazonGoodEmployer",
+        question:
+          "To what extent do you agree or disagree that Amazon is a good employer?",
+        type: "slider",
+        leftLabel: "Strongly Disagree",
+        centerLabel: "Neutral",
+        rightLabel: "Strongly Agree",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "amazonDcBuiltResponsibly",
+        question:
+          "To what extent do you agree or disagree that Amazon data centers are built responsibly?",
+        type: "slider",
+        leftLabel: "Strongly Disagree",
+        centerLabel: "Neutral",
+        rightLabel: "Strongly Agree",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "supportAmazonDcDevelopment",
+        question:
+          "Do you support or oppose Amazon data center development in your local community?",
+        type: "slider",
+        leftLabel: "Strongly Oppose",
+        centerLabel: "Neutral",
+        rightLabel: "Strongly Support",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "regulateAmazon",
+        question:
+          "To what extent do you agree or disagree that the government should regulate Amazon data centers more?",
+        type: "slider",
+        leftLabel: "Strongly Disagree",
+        centerLabel: "Neutral",
+        rightLabel: "Strongly Agree",
+        required: true,
+      },
+    ],
+  },
+];
+
+const getSurveySteps = (survey: SurveyKind): Step[] =>
+  survey === "postVideo" ? POST_VIDEO_STEPS : PRE_VIDEO_STEPS;
 
 const seedAnswers = (
   steps: Step[],

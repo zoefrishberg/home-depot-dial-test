@@ -1,9 +1,6 @@
 export type DialTestVideoSlug =
-  | "kitchen"
-  | "fifa-acceptance"
-  | "fifa-convenience"
-  | "fifa-security"
-  | "fifa-tap-in";
+  | "amazon-top-down"
+  | "amazon-bottom-up";
 export type DialTestVideoFormat = "mp4" | "hls";
 
 export interface DialTestVideo {
@@ -18,44 +15,27 @@ export interface ResolvedDialTestVideo extends DialTestVideo {
   usedFallback: boolean;
 }
 
-export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "kitchen";
+export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "amazon-top-down";
 
 const SUPABASE_VIDEO_BASE =
-  "https://tkymslezfmtkyebnagad.supabase.co/storage/v1/object/public/visavideos";
+  "https://tkymslezfmtkyebnagad.supabase.co/storage/v1/object/public/amazonvideos";
 
-// Each video is fielded as its own Lucid campaign and routed via ?video=<slug>.
-// All clips are plain, pre-trimmed/compressed mp4 in Supabase Storage — no
-// offset or HLS player needed (the slider already shows the 0.1s frame as a
-// poster so there is no black intro).
+// Amazon VA Combo round. Each video is fielded as its own Lucid campaign and
+// routed via ?video=<slug>. Both clips are ~60s 1080p mp4 in the public
+// `amazonvideos` Supabase Storage bucket (the filenames say "30" but the clips
+// run ~60s — expected, not a bug). No offset or HLS player needed (the slider
+// shows the 0.1s frame as a poster so there is no black intro).
 export const DIAL_TEST_VIDEOS: Record<DialTestVideoSlug, DialTestVideo> = {
-  kitchen: {
-    slug: "kitchen",
-    title: "Kitchen",
-    src: `${SUPABASE_VIDEO_BASE}/kitchen.mp4`,
+  "amazon-top-down": {
+    slug: "amazon-top-down",
+    title: "Amazon — Top Down",
+    src: `${SUPABASE_VIDEO_BASE}/amazon-top-down.mp4`,
     format: "mp4",
   },
-  "fifa-acceptance": {
-    slug: "fifa-acceptance",
-    title: "FIFA — Acceptance",
-    src: `${SUPABASE_VIDEO_BASE}/fifa-acceptance.mp4`,
-    format: "mp4",
-  },
-  "fifa-convenience": {
-    slug: "fifa-convenience",
-    title: "FIFA — Convenience",
-    src: `${SUPABASE_VIDEO_BASE}/fifa-convenience.mp4`,
-    format: "mp4",
-  },
-  "fifa-security": {
-    slug: "fifa-security",
-    title: "FIFA — Security",
-    src: `${SUPABASE_VIDEO_BASE}/fifa-security.mp4`,
-    format: "mp4",
-  },
-  "fifa-tap-in": {
-    slug: "fifa-tap-in",
-    title: "FIFA — Tap In",
-    src: `${SUPABASE_VIDEO_BASE}/fifa-tap-in.mp4`,
+  "amazon-bottom-up": {
+    slug: "amazon-bottom-up",
+    title: "Amazon — Bottom Up",
+    src: `${SUPABASE_VIDEO_BASE}/amazon-bottom-up.mp4`,
     format: "mp4",
   },
 };

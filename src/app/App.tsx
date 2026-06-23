@@ -7,14 +7,15 @@ import { DialTestHowItWorks } from "./components/dial-test-how-it-works";
 import { FeedbackTypeform, type SurveyAnswers } from "./components/feedback-typeform";
 import { SurveyHeader } from "./components/survey-header";
 import type { HandChoice } from "./components/hand-choice";
-import { createSession, recordPageCompletion } from "../utils/api";
+import { createSession, recordPageCompletion, saveFeedback } from "../utils/api";
 import {
+  getDialTestVideoFeedbackFields,
   getDialTestVideoMetadata,
   resolveDialTestVideo,
 } from "./constants";
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
-type AppStep = "intro" | "segmentation" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "complete";
+type AppStep = "intro" | "segmentation" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "feedback" | "complete";
 
 // Variant is fixed to "slider"; kept as a constant so the backend continues to
 // receive a value in the same shape it expects.
@@ -238,20 +239,37 @@ export default function App() {
     setStep("dialTest");
   };
 
-  // End of the dial: there are no post-video questions this round, so the final
-  // save fires here and must complete before the Lucid redirect. It writes all
-  // pre-video answers, the resolved video slug, and the Lucid RID into the
-  // session record (no `feedback:` row is created this round). The dial data
-  // itself is already saved by DialTestSlider before this runs.
-  const handleDialTestComplete = async () => {
+  // End of the dial: this round has post-video outcome questions, so advance to
+  // the post-video survey. The dial data itself is already saved by
+  // DialTestSlider before this runs.
+  const handleDialTestComplete = () => {
+    setStep("feedback");
+  };
+
+  // End of the post-video survey: this is the final save and must complete
+  // before the Lucid redirect. Post-video outcome answers go to the `feedback:`
+  // row (the post-video answers blob); pre-video segmentation answers are
+  // written to the session's `completion.preVideoAnswers` blob — the same
+  // covariate location prior rounds used for breakdowns. The two are kept in
+  // separate blobs on purpose so the pre-video sliders stay usable as segments.
+  const handleFeedbackSubmit = async (postVideoAnswers: SurveyAnswers) => {
+    const feedbackPayload = {
+      ...postVideoAnswers,
+      ...getDialTestVideoFeedbackFields(selectedVideo),
+    };
+
     if (sessionId && !testMode) {
       try {
+        await saveFeedback(sessionId, feedbackPayload);
+        await recordPageCompletion(sessionId, "feedback", {
+          video: selectedVideoMetadata,
+        });
         await recordPageCompletion(sessionId, "completion", {
           preVideoAnswers: segmentationAnswers,
           video: selectedVideoMetadata,
           rid: respondentId || null,
         });
-        console.log("Pre-video answers saved to session before redirect");
+        console.log("Post-video answers + pre-video covariates saved before redirect");
         console.log("=== Session Complete ===");
         console.log(`Session ID: ${sessionId}`);
         console.log(`Video: ${selectedVideoMetadata.slug} | RID: ${respondentId || "none"}`);
@@ -338,6 +356,17 @@ export default function App() {
         />
       );
     }
+    case "feedback":
+      return (
+        <FeedbackTypeform
+          survey="postVideo"
+          onSubmit={handleFeedbackSubmit}
+          onBack={() => setStep("dialTest")}
+          progressStart={80}
+          progressEnd={100}
+          submitLabel="Submit"
+        />
+      );
     case "complete":
       return (
         <div className="min-h-dvh bg-[#E8E8E8] flex justify-center">
