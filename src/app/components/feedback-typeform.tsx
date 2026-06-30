@@ -124,16 +124,15 @@ const shuffle = <T,>(input: T[]): T[] => {
   return copy;
 };
 
-// Amazon VA Combo round.
+// Amazon Texas dial round.
 //
-// Pre-video segmentation: demographics + two bipolar sliders, asked before the
-// respondent ever sees the clip. These are covariates Mike/Anshuk break the
-// outcome metrics down by, so their answers are stored in the segmentation /
+// Pre-video segmentation: demographics only (Age, Gender), asked before the
+// respondent ever sees the clip. These are the covariates the outcome metrics
+// are broken down by, so their answers are stored in the segmentation /
 // preVideoAnswers blob (NOT the post-video feedback row).
 //
-// IMPORTANT — order is intentional and must not be randomized. Each item is
-// asked exactly once (either pre- OR post-video, never both); there is no
-// pre/post pairing. One question per step.
+// IMPORTANT — exactly two items, in this order, never randomized. One question
+// per step.
 const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
@@ -160,77 +159,20 @@ const PRE_VIDEO_STEPS: Step[] = [
       },
     ],
   },
-  {
-    questions: [
-      {
-        // Support DC Development (bipolar slider).
-        id: "supportDcDevelopment",
-        question:
-          "Do you support or oppose data center development in your local community?",
-        type: "slider",
-        leftLabel: "Strongly Oppose",
-        centerLabel: "Neutral",
-        rightLabel: "Strongly Support",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // Positive Impact — Large Tech Companies (bipolar slider).
-        id: "positiveImpactLargeTech",
-        question:
-          "To what extent do you agree or disagree that large tech companies have a positive impact on your local community?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "Neutral",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-    ],
-  },
 ];
 
 // Post-video outcomes: 8 bipolar sliders, post-only, in this exact fixed order.
-// No randomization. Stored in the feedback row (the post-video answers blob),
-// separate from the pre-video segmentation answers.
+// No randomization. Same 8 for all four videos. Stored in the feedback row (the
+// post-video answers blob), separate from the pre-video segmentation answers.
 //
-// Analyst note: the two Regulation items are reverse-valence vs. favorability —
+// Analyst note: the Regulation item (#8) is reverse-valence vs. favorability —
 // a pro-Amazon respondent lands on the "disagree/left" side. Slider direction is
-// kept as written; reverse-scoring is handled downstream by Mike/Anshuk.
+// kept as written; reverse-scoring is handled downstream.
 const POST_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "dcBuiltResponsibly",
-        question:
-          "To what extent do you agree or disagree that data centers are built responsibly in your community?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "Neutral",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "regulateLargeTech",
-        question:
-          "To what extent do you agree or disagree that the government should regulate large tech companies more?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "Neutral",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
+        // 1) Favorability
         id: "amazonFavorability",
         question:
           "Please indicate whether you have a favorable or unfavorable opinion of Amazon.",
@@ -245,9 +187,10 @@ const POST_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "amazonPositiveImpactVirginia",
+        // 2) Positive Impact on Communities
+        id: "amazonPositiveImpactCommunities",
         question:
-          "To what extent do you agree or disagree that Amazon has a positive impact on Virginia and its communities?",
+          "To what extent do you agree or disagree that Amazon has a positive impact on the communities in which it operates?",
         type: "slider",
         leftLabel: "Strongly Disagree",
         centerLabel: "Neutral",
@@ -259,20 +202,7 @@ const POST_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "amazonGoodEmployer",
-        question:
-          "To what extent do you agree or disagree that Amazon is a good employer?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "Neutral",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
+        // 3) Amazon DC Built Responsibly
         id: "amazonDcBuiltResponsibly",
         question:
           "To what extent do you agree or disagree that Amazon data centers are built responsibly?",
@@ -287,9 +217,10 @@ const POST_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
+        // 4) Support Amazon DC Development
         id: "supportAmazonDcDevelopment",
         question:
-          "Do you support or oppose Amazon data center development in your local community?",
+          "Do you support or oppose Amazon data center development in communities across the U.S.?",
         type: "slider",
         leftLabel: "Strongly Oppose",
         centerLabel: "Neutral",
@@ -301,9 +232,55 @@ const POST_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
+        // 5) Amazon Water Replenish
+        id: "amazonWaterReplenish",
+        question:
+          "How much have you heard about Amazon's goal to replenish more water than its data centers consume?",
+        type: "slider",
+        leftLabel: "Nothing at all",
+        centerLabel: "Somewhat",
+        rightLabel: "A great deal",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 6) Amazon Reducing Water
+        id: "amazonReducingWater",
+        question:
+          "How much have you heard about Amazon reducing the amount of water its data centers use?",
+        type: "slider",
+        leftLabel: "Nothing at all",
+        centerLabel: "Somewhat",
+        rightLabel: "A great deal",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 7) Amazon Environmental Impact
+        id: "amazonEnvironmentalImpact",
+        question:
+          "How much have you heard about Amazon's efforts to reduce the environmental impact of its data centers?",
+        type: "slider",
+        leftLabel: "Nothing at all",
+        centerLabel: "Somewhat",
+        rightLabel: "A great deal",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 8) Regulation — Amazon
         id: "regulateAmazon",
         question:
-          "To what extent do you agree or disagree that the government should regulate Amazon data centers more?",
+          "To what extent do you agree or disagree that the government should impose new regulations on Amazon data centers?",
         type: "slider",
         leftLabel: "Strongly Disagree",
         centerLabel: "Neutral",

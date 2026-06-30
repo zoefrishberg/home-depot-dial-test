@@ -28,6 +28,11 @@ const GATE_THRESHOLD = 33;
 // Used only as the x-axis scale for the bottom histogram while practicing;
 // it does not gate progression in any way.
 const TUTORIAL_X_AXIS_DURATION = 20;
+// Vertical pixel distance from the centered handle within which an initial
+// press counts as "grabbing the handle" (handle is 36px tall + a touch margin).
+// Presses farther than this from the handle are ignored until the dial has been
+// engaged once, so practice traces also begin at the neutral center.
+const HANDLE_GRAB_TOLERANCE_PX = 32;
 
 export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress }: TutorialProps) {
   const [intensity, setIntensity] = useState(0); // -100 to 100
@@ -41,6 +46,10 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
 
   const sliderRef = useRef<HTMLDivElement>(null);
   const intensityRef = useRef(0);
+  // Flips true the first time the dial is engaged from the centered handle.
+  // Until then, only on-handle presses start practice (from center); afterward
+  // the existing press-to-resume behavior is restored.
+  const hasEngagedRef = useRef(false);
   const tutorialClockRef = useRef(0);
   const recordingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const screenStartedAtRef = useRef(Date.now());
@@ -115,21 +124,38 @@ export function DialTestTutorialSlider({ sessionId, onComplete, onBack, progress
   };
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!sliderRef.current) return;
+    const rect = sliderRef.current.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+
+    // Until the dial has been engaged for the first time, the only valid way to
+    // begin is to press ON the centered handle. We deliberately do NOT jump the
+    // fader to the press location, so practice starts from the neutral center
+    // (0). Presses elsewhere on the track are ignored: no capture, no start, no
+    // jump.
+    if (!hasEngagedRef.current) {
+      const handleCenterPx = (faderPosition / 100) * rect.height;
+      if (Math.abs(y - handleCenterPx) > HANDLE_GRAB_TOLERANCE_PX) return;
+      hasEngagedRef.current = true;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setIsTouching(true);
+      if (!hasTouched) setHasTouched(true);
+      return;
+    }
+
+    // After the first engagement, hold-to-record / resume behavior is unchanged:
+    // pressing anywhere resumes recording and moves the fader to the press spot.
     e.currentTarget.setPointerCapture(e.pointerId);
     setIsTouching(true);
     if (!hasTouched) setHasTouched(true);
-
-    if (sliderRef.current) {
-      const rect = sliderRef.current.getBoundingClientRect();
-      const y = e.clientY - rect.top;
-      const relativeY = Math.max(0, Math.min(1, y / rect.height));
-      const newIntensity = (0.5 - relativeY) * 200;
-      setIntensity(newIntensity);
-    }
+    const relativeY = Math.max(0, Math.min(1, y / rect.height));
+    setIntensity((0.5 - relativeY) * 200);
   };
 
   const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
-    e.currentTarget.releasePointerCapture(e.pointerId);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
     setIsTouching(false);
   };
 
