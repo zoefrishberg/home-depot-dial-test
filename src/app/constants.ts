@@ -1,4 +1,5 @@
 export type DialTestVideoSlug =
+  | "tx-water-bottom-up-v1"
   | "tx-top-down"
   | "tx-joyride"
   | "tx-bottom-up-v1"
@@ -17,22 +18,31 @@ export interface ResolvedDialTestVideo extends DialTestVideo {
   usedFallback: boolean;
 }
 
-export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "tx-top-down";
+export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "tx-water-bottom-up-v1";
 
 const SUPABASE_VIDEO_BASE =
   "https://tkymslezfmtkyebnagad.supabase.co/storage/v1/object/public/amazonvideos";
 
-// Amazon Texas dial round. Four clips, each fielded as its own Lucid campaign
-// and routed via ?video=<slug>; the slug is tagged on the session so each cell's
-// data stays separated. All clips are mp4 in the public `amazonvideos` Supabase
+// Amazon Texas dial round — now fielding a SINGLE cell: `tx-water-bottom-up-v1`,
+// which is also the default/fallback so both the bare URL and the explicit
+// ?video= link serve it. All clips are mp4 in the public `amazonvideos` Supabase
 // Storage bucket. No offset or HLS player needed (the slider shows the 0.1s
 // frame as a poster so there is no black intro).
 //
-// ASPECT RATIO: tx-joyride is square (1:1); the other three are 16:9. The video
+// The four `tx-top-down` / `tx-joyride` / `tx-bottom-up-v1` / `tx-bottom-up-v2`
+// entries are DORMANT this round (no Lucid campaign points at them) — kept in
+// config, not deleted, and none is the default.
+//
+// ASPECT RATIO: tx-joyride is square (1:1); the rest are 16:9. The video
 // elements use `object-contain`, so each source is fit/letterboxed to its own
-// aspect ratio without cropping or stretching — the square clip renders
-// correctly inside the same container.
+// aspect ratio without cropping or stretching.
 export const DIAL_TEST_VIDEOS: Record<DialTestVideoSlug, DialTestVideo> = {
+  "tx-water-bottom-up-v1": {
+    slug: "tx-water-bottom-up-v1",
+    title: "Texas — Water + Bottom Up V1",
+    src: `${SUPABASE_VIDEO_BASE}/TexasConnectsWater30_x_BottomUp_V1.mp4`,
+    format: "mp4",
+  },
   "tx-top-down": {
     slug: "tx-top-down",
     title: "Texas — Top Down",
