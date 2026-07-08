@@ -293,6 +293,19 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
         <SurveyHeader progress={progress} />
       </div>
 
+      {/* Live-stimulus dial instruction. Collapses out of layout while the user
+          is actively dragging (same visibility as the header) so it never
+          obstructs the video or the dial during recording. */}
+      <div
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out ${
+          shouldHideHeader ? "max-h-0 opacity-0" : "max-h-40 opacity-100"
+        }`}
+      >
+        <p className="px-4 py-3 text-sm leading-5 text-[#3D3D3D] text-center bg-[#E8E8E8] border-b border-gray-300">
+          As you watch, move the dial to show how the content affects your view of Amazon as an employer. Move it up when your view becomes more positive, and down when it becomes more negative.
+        </p>
+      </div>
+
       {/* Full-Screen Video Container */}
       <main className="flex-1 min-h-0 relative overflow-hidden">
         {/* Video - Full Screen Background */}

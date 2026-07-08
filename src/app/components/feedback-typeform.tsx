@@ -161,24 +161,50 @@ const PRE_VIDEO_STEPS: Step[] = [
   },
 ];
 
-// Post-video outcomes: 8 bipolar sliders, post-only, in this exact fixed order.
-// No randomization. Same 8 for all four videos. Stored in the feedback row (the
-// post-video answers blob), separate from the pre-video segmentation answers.
+// Post-video outcomes: 14 bipolar sliders, post-only, in this exact fixed order.
+// No randomization. Same 14 for all eight "Good Employer" round-2 videos. Every
+// item is oriented negative pole LEFT, positive pole RIGHT. Stored in the
+// feedback row (the post-video answers blob), separate from the pre-video
+// segmentation answers.
 //
-// Analyst note: the Regulation item (#8) is reverse-valence vs. favorability —
-// a pro-Amazon respondent lands on the "disagree/left" side. Slider direction is
-// kept as written; reverse-scoring is handled downstream.
+// Orientation / analysis notes (no build impact — the on-screen + stored
+// orientation is exactly as written here):
+//   - #4 (amazon-regulation) is reverse-valenced for analysis; a pro-Amazon
+//     respondent lands on the "disagree/left" side. Slider direction is kept as
+//     written; reverse-scoring is handled downstream.
+//   - #11 (bezos-favorability) and #12 (execs-trust) are intentionally oriented
+//     negative-left / positive-right (normalized from the positive-left original).
+//   - #8–10 (skills-training, safety-improvements, minimum-wage) use an awareness
+//     scale: "Nothing" → "A Great Deal".
+//
+// centerLabel is intentionally left blank: the brief specifies only the two
+// bipolar poles for this round, so no center-anchor copy is fabricated.
 const POST_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        // 1) Favorability
-        id: "amazonFavorability",
+        // 1) Good Employer
+        id: "good-employer",
+        question:
+          "To what extent do you agree or disagree that Amazon is a good employer?",
+        type: "slider",
+        leftLabel: "Strongly Disagree",
+        centerLabel: "",
+        rightLabel: "Strongly Agree",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 2) Brand Favorability
+        id: "brand-favorability",
         question:
           "Please indicate whether you have a favorable or unfavorable opinion of Amazon.",
         type: "slider",
         leftLabel: "Very Unfavorable",
-        centerLabel: "Neutral",
+        centerLabel: "",
         rightLabel: "Very Favorable",
         required: true,
       },
@@ -187,13 +213,28 @@ const POST_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        // 2) Positive Impact on Communities
-        id: "amazonPositiveImpactCommunities",
+        // 3) Purchase Intent
+        id: "purchase-intent",
         question:
-          "To what extent do you agree or disagree that Amazon has a positive impact on the communities in which it operates?",
+          "Please indicate whether you are likely to purchase from Amazon in the next month.",
+        type: "slider",
+        leftLabel: "Not At All Likely",
+        centerLabel: "",
+        rightLabel: "Very Likely",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 4) Amazon Regulation (reverse-valenced for analysis — no build change)
+        id: "amazon-regulation",
+        question:
+          "To what extent do you agree or disagree that the government should regulate Amazon more?",
         type: "slider",
         leftLabel: "Strongly Disagree",
-        centerLabel: "Neutral",
+        centerLabel: "",
         rightLabel: "Strongly Agree",
         required: true,
       },
@@ -202,13 +243,13 @@ const POST_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        // 3) Amazon DC Built Responsibly
-        id: "amazonDcBuiltResponsibly",
+        // 5) AI Leader
+        id: "ai-leader",
         question:
-          "To what extent do you agree or disagree that Amazon data centers are built responsibly?",
+          "To what extent do you agree or disagree that Amazon is a leader in artificial intelligence?",
         type: "slider",
         leftLabel: "Strongly Disagree",
-        centerLabel: "Neutral",
+        centerLabel: "",
         rightLabel: "Strongly Agree",
         required: true,
       },
@@ -217,73 +258,133 @@ const POST_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        // 4) Support Amazon DC Development
-        id: "supportAmazonDcDevelopment",
+        // 6) AI Tools Innovator
+        id: "ai-tools-innovator",
         question:
-          "Do you support or oppose Amazon data center development in communities across the U.S.?",
-        type: "slider",
-        leftLabel: "Strongly Oppose",
-        centerLabel: "Neutral",
-        rightLabel: "Strongly Support",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 5) Amazon Water Replenish
-        id: "amazonWaterReplenish",
-        question:
-          "How much have you heard about Amazon's goal to replenish more water than its data centers consume?",
-        type: "slider",
-        leftLabel: "Nothing at all",
-        centerLabel: "Somewhat",
-        rightLabel: "A great deal",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 6) Amazon Reducing Water
-        id: "amazonReducingWater",
-        question:
-          "How much have you heard about Amazon reducing the amount of water its data centers use?",
-        type: "slider",
-        leftLabel: "Nothing at all",
-        centerLabel: "Somewhat",
-        rightLabel: "A great deal",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 7) Amazon Environmental Impact
-        id: "amazonEnvironmentalImpact",
-        question:
-          "How much have you heard about Amazon's efforts to reduce the environmental impact of its data centers?",
-        type: "slider",
-        leftLabel: "Nothing at all",
-        centerLabel: "Somewhat",
-        rightLabel: "A great deal",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 8) Regulation — Amazon
-        id: "regulateAmazon",
-        question:
-          "To what extent do you agree or disagree that the government should impose new regulations on Amazon data centers?",
+          "To what extent do you agree or disagree that Amazon is innovating in artificial intelligence tools?",
         type: "slider",
         leftLabel: "Strongly Disagree",
-        centerLabel: "Neutral",
+        centerLabel: "",
+        rightLabel: "Strongly Agree",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 7) Amazon Prime Favorability
+        id: "amazon-prime-favorability",
+        question:
+          "Please indicate whether you have a favorable or unfavorable opinion of Amazon Prime.",
+        type: "slider",
+        leftLabel: "Very Unfavorable",
+        centerLabel: "",
+        rightLabel: "Very Favorable",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 8) Skills Training (awareness scale)
+        id: "skills-training",
+        question:
+          "How much have you heard about Amazon offering technical and skills training for hourly employees for career advancement?",
+        type: "slider",
+        leftLabel: "Nothing",
+        centerLabel: "",
+        rightLabel: "A Great Deal",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 9) Safety Improvements (awareness scale)
+        id: "safety-improvements",
+        question:
+          "How much have you heard about Amazon making improvements to ensure warehouse employees have safe working conditions?",
+        type: "slider",
+        leftLabel: "Nothing",
+        centerLabel: "",
+        rightLabel: "A Great Deal",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 10) Minimum Wage (awareness scale)
+        id: "minimum-wage",
+        question:
+          "How much have you heard about Amazon offering an average wage over $22/hr for hourly employees?",
+        type: "slider",
+        leftLabel: "Nothing",
+        centerLabel: "",
+        rightLabel: "A Great Deal",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 11) Bezos Favorability (negative-left / positive-right, normalized)
+        id: "bezos-favorability",
+        question:
+          "Please indicate whether you have a favorable or unfavorable opinion of Jeff Bezos.",
+        type: "slider",
+        leftLabel: "Very Unfavorable",
+        centerLabel: "",
+        rightLabel: "Very Favorable",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 12) Execs Trust (negative-left / positive-right, normalized)
+        id: "execs-trust",
+        question:
+          "How much do you trust the leadership of Amazon to do the right thing for its employees?",
+        type: "slider",
+        leftLabel: "Do Not Trust At All",
+        centerLabel: "",
+        rightLabel: "Completely Trust",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 13) Preferred Retailer
+        id: "preferred-retailer",
+        question:
+          "To what extent do you agree or disagree that Amazon is the retailer that I prefer above others?",
+        type: "slider",
+        leftLabel: "Strongly Disagree",
+        centerLabel: "",
+        rightLabel: "Strongly Agree",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        // 14) Strengthens America
+        id: "strengthens-america",
+        question:
+          "To what extent do you agree or disagree that Amazon is helping to strengthen America?",
+        type: "slider",
+        leftLabel: "Strongly Disagree",
+        centerLabel: "",
         rightLabel: "Strongly Agree",
         required: true,
       },

@@ -1,9 +1,15 @@
 export type DialTestVideoSlug =
-  | "tx-water-bottom-up-v1"
-  | "tx-top-down"
-  | "tx-joyride"
-  | "tx-bottom-up-v1"
-  | "tx-bottom-up-v2";
+  // Good Employer round 2 — 8-video dial test
+  | "cnn-robotics-full"
+  | "cnn-clip-1-human-robot"
+  | "cnn-clip-2-full-open"
+  | "cnn-clip-3-jobs-reframe"
+  | "cnn-clip-4-innovation"
+  | "fox-business-robotics"
+  | "sanders-ai-robots"
+  | "good-employer-default"
+  // Dormant — Good Employer round 1
+  | "amazon-robotic-tech";
 export type DialTestVideoFormat = "mp4" | "hls";
 
 export interface DialTestVideo {
@@ -18,53 +24,79 @@ export interface ResolvedDialTestVideo extends DialTestVideo {
   usedFallback: boolean;
 }
 
-export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "tx-water-bottom-up-v1";
+export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "cnn-robotics-full";
 
+// The bucket is literally named "Good Employer Content" (with spaces). The
+// percent-encoded form ("Good%20Employer%20Content") is what actually resolves,
+// so the %20 is stored verbatim and must NOT be stripped, renamed, or
+// "cleaned up".
 const SUPABASE_VIDEO_BASE =
-  "https://tkymslezfmtkyebnagad.supabase.co/storage/v1/object/public/amazonvideos";
+  "https://tkymslezfmtkyebnagad.supabase.co/storage/v1/object/public/Good%20Employer%20Content";
 
-// Amazon Texas dial round — now fielding a SINGLE cell: `tx-water-bottom-up-v1`,
-// which is also the default/fallback so both the bare URL and the explicit
-// ?video= link serve it. All clips are mp4 in the public `amazonvideos` Supabase
-// Storage bucket. No offset or HLS player needed (the slider shows the 0.1s
-// frame as a poster so there is no black intro).
+// "Good Employer" dial round 2 — 8 videos (5 CNN clips, Fox Business, Sanders,
+// plus a default alias). Each is fielded on its own `?video=` slug as a
+// separate Lucid campaign. All clips are mp4 in the public "Good Employer
+// Content" Supabase Storage bucket. The default/fallback is `cnn-robotics-full`
+// (16:9) so a bare or invalid URL never lands on the portrait clip.
 //
-// The four `tx-top-down` / `tx-joyride` / `tx-bottom-up-v1` / `tx-bottom-up-v2`
-// entries are DORMANT this round (no Lucid campaign points at them) — kept in
-// config, not deleted, and none is the default.
-//
-// ASPECT RATIO: tx-joyride is square (1:1); the rest are 16:9. The video
-// elements use `object-contain`, so each source is fit/letterboxed to its own
-// aspect ratio without cropping or stretching.
+// ASPECT RATIO: sanders-ai-robots is PORTRAIT (590×1280); all others are 16:9
+// landscape. The video elements use `object-contain`, so each source is
+// fit/letterboxed to its own aspect ratio without cropping or stretching.
 export const DIAL_TEST_VIDEOS: Record<DialTestVideoSlug, DialTestVideo> = {
-  "tx-water-bottom-up-v1": {
-    slug: "tx-water-bottom-up-v1",
-    title: "Texas — Water + Bottom Up V1",
-    src: `${SUPABASE_VIDEO_BASE}/TexasConnectsWater30_x_BottomUp_V1.mp4`,
+  // ── Round 2 — active ───────────────────────────────────────────────────
+  "cnn-robotics-full": {
+    slug: "cnn-robotics-full",
+    title: "CNN — Full Clip",
+    src: `${SUPABASE_VIDEO_BASE}/cnn-robotics-full.mp4`,
     format: "mp4",
   },
-  "tx-top-down": {
-    slug: "tx-top-down",
-    title: "Texas — Top Down",
-    src: `${SUPABASE_VIDEO_BASE}/TX_Top_Down_30_compressed.mp4`,
+  "cnn-clip-1-human-robot": {
+    slug: "cnn-clip-1-human-robot",
+    title: "CNN — Clip 1: Human-Robot Collaboration",
+    src: `${SUPABASE_VIDEO_BASE}/cnn-clip-1-human-robot.mp4`,
     format: "mp4",
   },
-  "tx-joyride": {
-    slug: "tx-joyride",
-    title: "Texas — Joyride",
-    src: `${SUPABASE_VIDEO_BASE}/AMZN_2026_DCJC_JOYRIDE-TEXAS_15s_INSITU-1080_1x1_R1V8_260624_ANJ.mp4`,
+  "cnn-clip-2-full-open": {
+    slug: "cnn-clip-2-full-open",
+    title: "CNN — Clip 2: Full Open",
+    src: `${SUPABASE_VIDEO_BASE}/cnn-clip-2-full-open.mp4`,
     format: "mp4",
   },
-  "tx-bottom-up-v1": {
-    slug: "tx-bottom-up-v1",
-    title: "Texas — Bottom Up V1",
-    src: `${SUPABASE_VIDEO_BASE}/BOTTOM_UP_TEXAS_V1.mp4`,
+  "cnn-clip-3-jobs-reframe": {
+    slug: "cnn-clip-3-jobs-reframe",
+    title: "CNN — Clip 3: Jobs Reframe",
+    src: `${SUPABASE_VIDEO_BASE}/cnn-clip-3-jobs-reframe.mp4`,
     format: "mp4",
   },
-  "tx-bottom-up-v2": {
-    slug: "tx-bottom-up-v2",
-    title: "Texas — Bottom Up V2",
-    src: `${SUPABASE_VIDEO_BASE}/BOTTOM_UP_TEXAS_V2.mp4`,
+  "cnn-clip-4-innovation": {
+    slug: "cnn-clip-4-innovation",
+    title: "CNN — Clip 4: Innovation",
+    src: `${SUPABASE_VIDEO_BASE}/cnn-clip-4-innovation.mp4`,
+    format: "mp4",
+  },
+  "fox-business-robotics": {
+    slug: "fox-business-robotics",
+    title: "Fox Business — Prime Day Robotics",
+    src: `${SUPABASE_VIDEO_BASE}/fox-business-robotics.mp4`,
+    format: "mp4",
+  },
+  "sanders-ai-robots": {
+    slug: "sanders-ai-robots",
+    title: "Sanders — AI Robots Bezos (portrait)",
+    src: `${SUPABASE_VIDEO_BASE}/sanders-ai-robots.mp4`,
+    format: "mp4",
+  },
+  "good-employer-default": {
+    slug: "good-employer-default",
+    title: "Good Employer — Default (Full CNN Clip)",
+    src: `${SUPABASE_VIDEO_BASE}/cnn-robotics-full.mp4`,
+    format: "mp4",
+  },
+  // ── Dormant — round 1 ──────────────────────────────────────────────────
+  "amazon-robotic-tech": {
+    slug: "amazon-robotic-tech",
+    title: "Good Employer — Amazon Robotic Tech (dormant)",
+    src: `${SUPABASE_VIDEO_BASE}/amazon-robotic-tech.mp4`,
     format: "mp4",
   },
 };

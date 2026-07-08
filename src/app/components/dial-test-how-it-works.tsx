@@ -62,7 +62,7 @@ export function DialTestHowItWorks({
       <main className="flex-1 flex flex-col px-4 py-8 gap-10">
         <div className="max-w-2xl mx-auto w-full flex flex-col gap-6">
           <h1>
-            Share how the video makes you feel as you watch it again.
+            As you watch, move the dial to show how the content affects your view of Amazon as an employer. Move it up when your view becomes more positive, and down when it becomes more negative.
           </h1>
 
           <div className="flex flex-col gap-3">
