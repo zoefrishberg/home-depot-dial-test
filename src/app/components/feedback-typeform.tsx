@@ -124,21 +124,26 @@ const shuffle = <T,>(input: T[]): T[] => {
   return copy;
 };
 
-// Amazon Texas dial round.
+// Udit Madan Shadrack round.
 //
-// Pre-video segmentation: demographics only (Age, Gender), asked before the
-// respondent ever sees the clip. These are the covariates the outcome metrics
-// are broken down by, so their answers are stored in the segmentation /
-// preVideoAnswers blob (NOT the post-video feedback row).
-//
-// IMPORTANT — exactly two items, in this order, never randomized. One question
-// per step.
+// Pre-video segmentation: 14 questions asked before the respondent sees the
+// clip. One question per step, all required, fixed order.
 const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        // Age — same input style (year of birth) as prior rounds.
-        id: "yearOfBirth",
+        id: "Gender",
+        question: "What is your gender?",
+        type: "single",
+        options: ["Female", "Male", "Other"],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "BirthYear2025",
         question: "What is your year of birth?",
         type: "year",
         placeholder: "YYYY",
@@ -151,246 +156,173 @@ const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "gender",
-        question: "What is your gender?",
+        id: "AnnualHouseholdIncome",
+        question: "What is your approximate annual household income in dollars?",
+        type: "dollar",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "WhatRaceOrEthnicGroupMostIdentifyWith",
+        question: "What race or ethnic group do you most identify with?",
         type: "single",
-        options: ["Male", "Female", "Other"],
+        options: ["White", "Black", "Asian", "Hispanic or Latino", "Other/Mixed"],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "EducationNumerical",
+        question: "What is your educational background?",
+        type: "single",
+        options: [
+          "Some School / No Diploma",
+          "High School Graduate",
+          "Some College",
+          "College Degree",
+          "Postgraduate Degree",
+        ],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "isYourCurrentJobInTechOrATechRelatedField",
+        question: "Is your current job in tech or a tech-related field?",
+        type: "single",
+        options: ["Yes", "No"],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "JobSector-v14",
+        question:
+          "Which of the following best describes your current or former work industry?",
+        type: "single",
+        options: [
+          "Retail",
+          "Technology / digital / IT",
+          "Government / public sector",
+          "Journalism / media / entertainment",
+          "Transportation / distribution / warehousing",
+          "Other",
+          "Not relevant",
+        ],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "inPoliticsTodayDoYouConsiderYourself",
+        question: "In politics today, do you consider yourself...?",
+        type: "single",
+        options: ["A Republican", "A Democrat", "Independent", "Something else"],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "whoDidYouVoteForInThe2024PresidentialElection-v1",
+        question: "Who did you vote for in the 2024 Presidential Election?",
+        type: "single",
+        options: [
+          "Democrat Kamala Harris",
+          "Republican Donald Trump",
+          "Other",
+          "Did not vote",
+        ],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "doYouConsiderYourselfPartOfTheMagaMakeAmericaGreat",
+        question:
+          "Do you consider yourself part of the MAGA (Make America Great Again) coalition or an America First populist?",
+        type: "slider",
+        leftLabel: "Definitely Not",
+        centerLabel: "Neutral / Unsure",
+        rightLabel: "Definitely Yes",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "approximatelyHowMuchTimeOnAnAverageDayThisWeekDidY",
+        question:
+          "Approximately how much time on an average day this week did you spend reading, watching, or listening to the news?",
+        type: "single",
+        options: [
+          "None",
+          "Less than an hour",
+          "An hour or two",
+          "Three hours or more",
+        ],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "doYouGetALotSomeOrVeryLittleOfYourNewsFromNational",
+        question:
+          "Do you get a lot, some, or very little of your news from national sources like major national papers or cable TV?",
+        type: "slider",
+        leftLabel: "Very Little",
+        centerLabel: "Some",
+        rightLabel: "A Lot",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "onAScaleOfVeryInterestedToNotInterestedAtAllHowWou",
+        question:
+          "On a scale of very interested to not interested at all, how would you describe your level of political interest?",
+        type: "slider",
+        leftLabel: "Not at all Interested",
+        centerLabel: "Somewhat Interested",
+        rightLabel: "Very Interested",
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "AmazonPrimeMembership",
+        question: "Do you have an Amazon Prime membership?",
+        type: "single",
+        options: ["No", "Yes"],
         required: true,
       },
     ],
   },
 ];
 
-// Post-video outcomes: 14 bipolar sliders, post-only, in this exact fixed order.
-// No randomization. Same 14 for all eight "Good Employer" round-2 videos. Every
-// item is oriented negative pole LEFT, positive pole RIGHT. Stored in the
-// feedback row (the post-video answers blob), separate from the pre-video
-// segmentation answers.
-//
-// Orientation / analysis notes (no build impact — the on-screen + stored
-// orientation is exactly as written here):
-//   - #4 (amazon-regulation) is reverse-valenced for analysis; a pro-Amazon
-//     respondent lands on the "disagree/left" side. Slider direction is kept as
-//     written; reverse-scoring is handled downstream.
-//   - #11 (bezos-favorability) and #12 (execs-trust) are intentionally oriented
-//     negative-left / positive-right (normalized from the positive-left original).
-//   - #8–10 (skills-training, safety-improvements, minimum-wage) use an awareness
-//     scale: "Nothing" → "A Great Deal".
-//
-// centerLabel is intentionally left blank: the brief specifies only the two
-// bipolar poles for this round, so no center-anchor copy is fabricated.
-const POST_VIDEO_STEPS: Step[] = [
-  {
-    questions: [
-      {
-        // 1) Good Employer
-        id: "good-employer",
-        question:
-          "To what extent do you agree or disagree that Amazon is a good employer?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 2) Brand Favorability
-        id: "brand-favorability",
-        question:
-          "Please indicate whether you have a favorable or unfavorable opinion of Amazon.",
-        type: "slider",
-        leftLabel: "Very Unfavorable",
-        centerLabel: "",
-        rightLabel: "Very Favorable",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 3) Purchase Intent
-        id: "purchase-intent",
-        question:
-          "Please indicate whether you are likely to purchase from Amazon in the next month.",
-        type: "slider",
-        leftLabel: "Not At All Likely",
-        centerLabel: "",
-        rightLabel: "Very Likely",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 4) Amazon Regulation (reverse-valenced for analysis — no build change)
-        id: "amazon-regulation",
-        question:
-          "To what extent do you agree or disagree that the government should regulate Amazon more?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 5) AI Leader
-        id: "ai-leader",
-        question:
-          "To what extent do you agree or disagree that Amazon is a leader in artificial intelligence?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 6) AI Tools Innovator
-        id: "ai-tools-innovator",
-        question:
-          "To what extent do you agree or disagree that Amazon is innovating in artificial intelligence tools?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 7) Amazon Prime Favorability
-        id: "amazon-prime-favorability",
-        question:
-          "Please indicate whether you have a favorable or unfavorable opinion of Amazon Prime.",
-        type: "slider",
-        leftLabel: "Very Unfavorable",
-        centerLabel: "",
-        rightLabel: "Very Favorable",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 8) Skills Training (awareness scale)
-        id: "skills-training",
-        question:
-          "How much have you heard about Amazon offering technical and skills training for hourly employees for career advancement?",
-        type: "slider",
-        leftLabel: "Nothing",
-        centerLabel: "",
-        rightLabel: "A Great Deal",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 9) Safety Improvements (awareness scale)
-        id: "safety-improvements",
-        question:
-          "How much have you heard about Amazon making improvements to ensure warehouse employees have safe working conditions?",
-        type: "slider",
-        leftLabel: "Nothing",
-        centerLabel: "",
-        rightLabel: "A Great Deal",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 10) Minimum Wage (awareness scale)
-        id: "minimum-wage",
-        question:
-          "How much have you heard about Amazon offering an average wage over $22/hr for hourly employees?",
-        type: "slider",
-        leftLabel: "Nothing",
-        centerLabel: "",
-        rightLabel: "A Great Deal",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 11) Bezos Favorability (negative-left / positive-right, normalized)
-        id: "bezos-favorability",
-        question:
-          "Please indicate whether you have a favorable or unfavorable opinion of Jeff Bezos.",
-        type: "slider",
-        leftLabel: "Very Unfavorable",
-        centerLabel: "",
-        rightLabel: "Very Favorable",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 12) Execs Trust (negative-left / positive-right, normalized)
-        id: "execs-trust",
-        question:
-          "How much do you trust the leadership of Amazon to do the right thing for its employees?",
-        type: "slider",
-        leftLabel: "Do Not Trust At All",
-        centerLabel: "",
-        rightLabel: "Completely Trust",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 13) Preferred Retailer
-        id: "preferred-retailer",
-        question:
-          "To what extent do you agree or disagree that Amazon is the retailer that I prefer above others?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        // 14) Strengthens America
-        id: "strengthens-america",
-        question:
-          "To what extent do you agree or disagree that Amazon is helping to strengthen America?",
-        type: "slider",
-        leftLabel: "Strongly Disagree",
-        centerLabel: "",
-        rightLabel: "Strongly Agree",
-        required: true,
-      },
-    ],
-  },
-];
+// No post-video questions this round.
+const POST_VIDEO_STEPS: Step[] = [];
 
 const getSurveySteps = (survey: SurveyKind): Step[] =>
   survey === "postVideo" ? POST_VIDEO_STEPS : PRE_VIDEO_STEPS;

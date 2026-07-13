@@ -1,5 +1,7 @@
 export type DialTestVideoSlug =
-  // Good Employer round 2 — 8-video dial test
+  // Udit Madan Shadrack interview
+  | "udit-madan-shadrack"
+  // Dormant — Good Employer round 2 — 8-video dial test
   | "cnn-robotics-full"
   | "cnn-clip-1-human-robot"
   | "cnn-clip-2-full-open"
@@ -24,7 +26,7 @@ export interface ResolvedDialTestVideo extends DialTestVideo {
   usedFallback: boolean;
 }
 
-export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "cnn-robotics-full";
+export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "udit-madan-shadrack";
 
 // The bucket is literally named "Good Employer Content" (with spaces). The
 // percent-encoded form ("Good%20Employer%20Content") is what actually resolves,
@@ -43,7 +45,14 @@ const SUPABASE_VIDEO_BASE =
 // landscape. The video elements use `object-contain`, so each source is
 // fit/letterboxed to its own aspect ratio without cropping or stretching.
 export const DIAL_TEST_VIDEOS: Record<DialTestVideoSlug, DialTestVideo> = {
-  // ── Round 2 — active ───────────────────────────────────────────────────
+  // ── Udit Madan Shadrack — active ──────────────────────────────────────
+  "udit-madan-shadrack": {
+    slug: "udit-madan-shadrack",
+    title: "Udit Madan Shadrack Interview",
+    src: "https://tkymslezfmtkyebnagad.supabase.co/storage/v1/object/public/amazonvideos/Udit%20Madan%20Shadrack%20Interview.mp4",
+    format: "mp4",
+  },
+  // ── Dormant — Good Employer round 2 ───────────────────────────────────
   "cnn-robotics-full": {
     slug: "cnn-robotics-full",
     title: "CNN — Full Clip",
