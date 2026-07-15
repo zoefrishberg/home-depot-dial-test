@@ -124,18 +124,18 @@ const shuffle = <T,>(input: T[]): T[] => {
   return copy;
 };
 
-// Udit Madan Shadrack round.
+// Home Depot dial test v1.
 //
-// Pre-video segmentation: 14 questions asked before the respondent sees the
+// Pre-video segmentation: 11 questions asked before the respondent sees the
 // clip. One question per step, all required, fixed order.
 const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "Gender",
+        id: "gender",
         question: "What is your gender?",
         type: "single",
-        options: ["Female", "Male", "Other"],
+        options: ["Male", "Female", "Other"],
         required: true,
       },
     ],
@@ -143,12 +143,12 @@ const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "BirthYear2025",
+        id: "birth_year",
         question: "What is your year of birth?",
         type: "year",
         placeholder: "YYYY",
-        min: 1900,
-        max: 2026,
+        min: 1920,
+        max: 2010,
         required: true,
       },
     ],
@@ -156,9 +156,10 @@ const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "AnnualHouseholdIncome",
-        question: "What is your approximate annual household income in dollars?",
-        type: "dollar",
+        id: "zip_code",
+        question: "What is your zip code?",
+        type: "zip",
+        placeholder: "ZZZZZ",
         required: true,
       },
     ],
@@ -166,10 +167,27 @@ const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "WhatRaceOrEthnicGroupMostIdentifyWith",
-        question: "What race or ethnic group do you most identify with?",
+        id: "household_income",
+        question:
+          "What is the total annual income of your household before taxes?",
         type: "single",
-        options: ["White", "Black", "Asian", "Hispanic or Latino", "Other/Mixed"],
+        options: [
+          "Less than $20,000",
+          "$20,000-$29,999",
+          "$30,000-$39,999",
+          "$40,000-$49,999",
+          "$50,000-$59,999",
+          "$60,000-$69,999",
+          "$70,000-$79,999",
+          "$80,000-$89,999",
+          "$90,000-$99,999",
+          "$100,000-$124,999",
+          "$125,000-$149,999",
+          "$150,000-$174,999",
+          "$175,000-$199,999",
+          "$200,000+",
+          "Don't know/prefer not to answer",
+        ],
         required: true,
       },
     ],
@@ -177,12 +195,44 @@ const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "EducationNumerical",
+        id: "ethnicity",
+        question:
+          "What race(s) or ethnic group(s) do you most identify with? Select all that apply.",
+        type: "multi",
+        options: [
+          "Black",
+          "Asian",
+          "Hispanic or Latino/Latina/Latinx",
+          "White",
+          "Native American/Indigenous",
+          "Native Hawaiian or Pacific Islander",
+          "Other",
+        ],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "hispanic_identity",
+        question: "Are you of hispanic or latino origin?",
+        type: "single",
+        options: ["Yes", "No"],
+        required: true,
+      },
+    ],
+  },
+  {
+    questions: [
+      {
+        id: "education",
         question: "What is your educational background?",
         type: "single",
         options: [
-          "Some School / No Diploma",
+          "Some School",
           "High School Graduate",
+          "Trade School",
           "Some College",
           "College Degree",
           "Postgraduate Degree",
@@ -194,29 +244,13 @@ const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "isYourCurrentJobInTechOrATechRelatedField",
-        question: "Is your current job in tech or a tech-related field?",
-        type: "single",
-        options: ["Yes", "No"],
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "JobSector-v14",
-        question:
-          "Which of the following best describes your current or former work industry?",
+        id: "homeowner_type",
+        question: "Which of the following best applies to you?",
         type: "single",
         options: [
-          "Retail",
-          "Technology / digital / IT",
-          "Government / public sector",
-          "Journalism / media / entertainment",
-          "Transportation / distribution / warehousing",
-          "Other",
-          "Not relevant",
+          "I currently rent my house/apartment",
+          "I currently own my house/apartment",
+          "Other / None of the above",
         ],
         required: true,
       },
@@ -225,25 +259,20 @@ const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "inPoliticsTodayDoYouConsiderYourself",
-        question: "In politics today, do you consider yourself...?",
-        type: "single",
-        options: ["A Republican", "A Democrat", "Independent", "Something else"],
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "whoDidYouVoteForInThe2024PresidentialElection-v1",
-        question: "Who did you vote for in the 2024 Presidential Election?",
+        id: "home_improvement_spend_past_6m",
+        question:
+          "How much have you spent on home improvement products, including decor, in the past 6 months?",
         type: "single",
         options: [
-          "Democrat Kamala Harris",
-          "Republican Donald Trump",
-          "Other",
-          "Did not vote",
+          "$0-$250",
+          "$251-$500",
+          "$501-$750",
+          "$751-$1,000",
+          "$1,001-$5,000",
+          "$5,001-$10,000",
+          "$10,001-$20,000",
+          "$20,000 or more",
+          "None of the above",
         ],
         required: true,
       },
@@ -252,29 +281,20 @@ const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "doYouConsiderYourselfPartOfTheMagaMakeAmericaGreat",
+        id: "home_improvement_spend_next_6m",
         question:
-          "Do you consider yourself part of the MAGA (Make America Great Again) coalition or an America First populist?",
-        type: "slider",
-        leftLabel: "Definitely Not",
-        centerLabel: "Neutral / Unsure",
-        rightLabel: "Definitely Yes",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "approximatelyHowMuchTimeOnAnAverageDayThisWeekDidY",
-        question:
-          "Approximately how much time on an average day this week did you spend reading, watching, or listening to the news?",
+          "How much do you plan to spend on home improvement products, including decor, in the next 6 months?",
         type: "single",
         options: [
-          "None",
-          "Less than an hour",
-          "An hour or two",
-          "Three hours or more",
+          "$0-$250",
+          "$251-$500",
+          "$501-$750",
+          "$751-$1,000",
+          "$1,001-$5,000",
+          "$5,001-$10,000",
+          "$10,001-$20,000",
+          "$20,000 or more",
+          "None of the above",
         ],
         required: true,
       },
@@ -283,39 +303,28 @@ const PRE_VIDEO_STEPS: Step[] = [
   {
     questions: [
       {
-        id: "doYouGetALotSomeOrVeryLittleOfYourNewsFromNational",
+        id: "household_employment",
         question:
-          "Do you get a lot, some, or very little of your news from national sources like major national papers or cable TV?",
-        type: "slider",
-        leftLabel: "Very Little",
-        centerLabel: "Some",
-        rightLabel: "A Lot",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "onAScaleOfVeryInterestedToNotInterestedAtAllHowWou",
-        question:
-          "On a scale of very interested to not interested at all, how would you describe your level of political interest?",
-        type: "slider",
-        leftLabel: "Not at all Interested",
-        centerLabel: "Somewhat Interested",
-        rightLabel: "Very Interested",
-        required: true,
-      },
-    ],
-  },
-  {
-    questions: [
-      {
-        id: "AmazonPrimeMembership",
-        question: "Do you have an Amazon Prime membership?",
-        type: "single",
-        options: ["No", "Yes"],
-        required: true,
+          "Do you, or does anyone in your household, work for any of the following? Select all that apply.",
+        type: "multi",
+        options: [
+          "Market research company",
+          "Advertising company",
+          "eCommerce company",
+          "Food or manufacturing or distribution company",
+          "Personal health related company",
+          "Restaurant company",
+          "Retail company",
+          "Telecommunication company",
+          "Technology company",
+          "Pharmaceutical manufacturing company",
+          "Legal services company",
+          "Academic institution",
+          "Financial services company",
+          "Media & public relations company",
+          "Dental or medical care company",
+        ],
+        exclusiveOptions: ["None of the above"],
       },
     ],
   },

@@ -302,7 +302,7 @@ export function DialTestSlider({ sessionId, testMode = false, onComplete, onBack
         }`}
       >
         <p className="px-4 py-3 text-sm leading-5 text-[#3D3D3D] text-center bg-[#E8E8E8] border-b border-gray-300">
-          As you watch, move the dial to show how the content affects your view of Amazon as an employer. Move it up when your view becomes more positive, and down when it becomes more negative.
+          As you watch, use the slider to show how the content makes you feel. Move it up when you feel more positive, and down when you feel more negative.
         </p>
       </div>
 

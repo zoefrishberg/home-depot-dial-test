@@ -5,6 +5,7 @@ import { DialTestIntro } from "./components/dial-test-intro";
 import { DialTestFirstExposure } from "./components/dial-test-first-exposure";
 import { DialTestHowItWorks } from "./components/dial-test-how-it-works";
 import { FeedbackTypeform, type SurveyAnswers } from "./components/feedback-typeform";
+import { PreExposureInterstitial } from "./components/pre-exposure-interstitial";
 import { SurveyHeader } from "./components/survey-header";
 import type { HandChoice } from "./components/hand-choice";
 import { createSession, recordPageCompletion } from "../utils/api";
@@ -14,7 +15,7 @@ import {
 } from "./constants";
 import { detectDevice, getDeviceSummary } from "../utils/deviceDetection";
 
-type AppStep = "intro" | "segmentation" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "complete";
+type AppStep = "intro" | "segmentation" | "preExposure" | "firstExposure" | "howItWorks" | "tutorial" | "dialTest" | "complete";
 
 // Variant is fixed to "slider"; kept as a constant so the backend continues to
 // receive a value in the same shape it expects.
@@ -170,6 +171,22 @@ export default function App() {
       console.log("🧪 Test mode: Skipped saving segmentation completion");
     }
 
+    setStep("preExposure");
+  };
+
+  const handlePreExposureContinue = async () => {
+    if (sessionId && !testMode) {
+      try {
+        await recordPageCompletion(sessionId, "preExposure", {
+          video: selectedVideoMetadata,
+        });
+        console.log("Pre-exposure interstitial completed");
+      } catch (error) {
+        console.error("Failed to record pre-exposure completion:", error);
+      }
+    } else if (testMode) {
+      console.log("🧪 Test mode: Skipped saving pre-exposure completion");
+    }
     setStep("firstExposure");
   };
 
@@ -294,13 +311,21 @@ export default function App() {
           submitLabel="Continue"
         />
       );
+    case "preExposure":
+      return (
+        <PreExposureInterstitial
+          onContinue={handlePreExposureContinue}
+          onBack={() => setStep("segmentation")}
+          progress={18}
+        />
+      );
     case "firstExposure":
       return (
         <DialTestFirstExposure
           sessionId={sessionId}
           testMode={testMode}
           onComplete={handleFirstExposureComplete}
-          onBack={() => setStep("segmentation")}
+          onBack={() => setStep("preExposure")}
           progress={20}
           video={selectedVideo}
         />

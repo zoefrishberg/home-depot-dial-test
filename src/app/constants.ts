@@ -1,5 +1,8 @@
 export type DialTestVideoSlug =
-  // Udit Madan Shadrack interview
+  // Home Depot dial test v1 — active
+  | "home_depot_holiday"
+  | "home_depot_totes"
+  // Dormant — Udit Madan Shadrack interview
   | "udit-madan-shadrack"
   // Dormant — Good Employer round 2 — 8-video dial test
   | "cnn-robotics-full"
@@ -26,7 +29,7 @@ export interface ResolvedDialTestVideo extends DialTestVideo {
   usedFallback: boolean;
 }
 
-export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "udit-madan-shadrack";
+export const DEFAULT_DIAL_TEST_VIDEO_SLUG: DialTestVideoSlug = "home_depot_holiday";
 
 // The bucket is literally named "Good Employer Content" (with spaces). The
 // percent-encoded form ("Good%20Employer%20Content") is what actually resolves,
@@ -45,7 +48,20 @@ const SUPABASE_VIDEO_BASE =
 // landscape. The video elements use `object-contain`, so each source is
 // fit/letterboxed to its own aspect ratio without cropping or stretching.
 export const DIAL_TEST_VIDEOS: Record<DialTestVideoSlug, DialTestVideo> = {
-  // ── Udit Madan Shadrack — active ──────────────────────────────────────
+  // ── Home Depot dial test v1 — active ──────────────────────────────────
+  home_depot_holiday: {
+    slug: "home_depot_holiday",
+    title: "Home Depot Holiday",
+    src: `${import.meta.env.BASE_URL}videos/holiday_15_compressed.mp4`,
+    format: "mp4",
+  },
+  home_depot_totes: {
+    slug: "home_depot_totes",
+    title: "Home Depot Totes",
+    src: `${import.meta.env.BASE_URL}videos/totes_compressed.mp4`,
+    format: "mp4",
+  },
+  // ── Dormant — Udit Madan Shadrack ─────────────────────────────────────
   "udit-madan-shadrack": {
     slug: "udit-madan-shadrack",
     title: "Udit Madan Shadrack Interview",
